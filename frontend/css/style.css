@@ -565,3 +565,6 @@ nav a.nav-active {
   border-color: rgba(142, 255, 113, 0.22);
   box-shadow: 0 0 16px rgba(142, 255, 113, 0.05);
 }
+
+/* Article body typography now lives in modals.html <style> block */
+

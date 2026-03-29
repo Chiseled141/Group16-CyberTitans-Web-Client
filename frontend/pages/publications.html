@@ -3,7 +3,7 @@
     
     <div class="mb-20">
         <div class="border-l-4 border-tertiary pl-8 mb-12">
-            <h1 class="text-5xl font-headline font-bold text-white">Intelligence Briefings</h1>
+            <h1 class="text-5xl font-headline font-bold text-white">Write-ups & Articles</h1>
         </div>
         
         <div class="flex flex-wrap gap-4 mt-8 mb-12 border-b border-white/10 pb-4" id="pub-filter-bar">
@@ -16,7 +16,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="publications-grid">
 
-            <div data-category="WEB_DEV" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="WEB_DEV" onclick="openArticle('ws-leaderboard')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-blue-400 font-mono text-[10px] tracking-widest uppercase border border-blue-400/20 px-2 py-0.5 bg-blue-400/5">WEB_DEV</span>
@@ -39,7 +39,7 @@
                 </div>
             </div>
 
-            <div data-category="ALGORITHMS" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="ALGORITHMS" onclick="openArticle('segment-tree')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-yellow-400 font-mono text-[10px] tracking-widest uppercase border border-yellow-400/20 px-2 py-0.5 bg-yellow-400/5">ALGORITHMS</span>
@@ -62,7 +62,7 @@
                 </div>
             </div>
 
-            <div data-category="CTF_WRITEUP" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="CTF_WRITEUP" onclick="openArticle('v8-exploit')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-purple-400 font-mono text-[10px] tracking-widest uppercase border border-purple-400/20 px-2 py-0.5 bg-purple-400/5">CTF_WRITEUP</span>
@@ -85,7 +85,7 @@
                 </div>
             </div>
 
-            <div data-category="AI_ML" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="AI_ML" onclick="openArticle('llama-vn')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-pink-400 font-mono text-[10px] tracking-widest uppercase border border-pink-400/20 px-2 py-0.5 bg-pink-400/5">AI_ML</span>
@@ -108,7 +108,7 @@
                 </div>
             </div>
 
-            <div data-category="WEB_DEV" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="WEB_DEV" onclick="openArticle('docker-cicd')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-blue-400 font-mono text-[10px] tracking-widest uppercase border border-blue-400/20 px-2 py-0.5 bg-blue-400/5">WEB_DEV</span>
@@ -131,7 +131,7 @@
                 </div>
             </div>
 
-            <div data-category="CTF_WRITEUP" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
+            <div data-category="CTF_WRITEUP" onclick="openArticle('sqli-rce')" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer flex flex-col h-full">
                 <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-purple-400 font-mono text-[10px] tracking-widest uppercase border border-purple-400/20 px-2 py-0.5 bg-purple-400/5">CTF_WRITEUP</span>

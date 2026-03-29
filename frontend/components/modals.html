@@ -134,17 +134,96 @@
   </div>
 </div>
 
-<div id="article-modal" class="modal-backdrop" onclick="handleBackdropClick(event, 'article-modal')">
-  <div class="max-w-2xl w-full bg-surface-container-low border border-outline-variant/15 p-10 relative overflow-hidden" onclick="event.stopPropagation()">
-    <button onclick="closeModal('article-modal')" class="absolute top-4 right-4 text-on-surface-variant hover:text-white transition-colors">
+<style>
+  #article-modal-panel { scrollbar-width: none; }
+  #article-modal-panel::-webkit-scrollbar { display: none; }
+  .ab p  { font-size:.9375rem; line-height:1.85; margin-bottom:1.1rem; color:#c8c8c8; }
+  .ab h3 { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#fff;
+            padding-left:.875rem; border-left:3px solid #8eff71; margin:2rem 0 .75rem; }
+  .ab pre { font-family:'JetBrains Mono',monospace; font-size:.78rem; line-height:1.7;
+             background:#060606; border:1px solid rgba(255,255,255,.07);
+             border-left:3px solid rgba(142,255,113,.5); padding:1.25rem 1.5rem;
+             overflow-x:auto; color:#a3e635; margin:1rem 0 1.5rem; }
+  .ab code { font-family:'JetBrains Mono',monospace; font-size:.8em; color:#8eff71;
+              background:rgba(142,255,113,.08); padding:1px 5px; }
+  .ab pre code { background:none; padding:0; color:inherit; }
+  .ab ul { list-style:none; padding:0; margin-bottom:1.25rem; }
+  .ab ul li { position:relative; padding-left:1.25rem; color:#b0b0b0; font-size:.9rem; margin-bottom:.35rem; }
+  .ab ul li::before { content:'▸'; position:absolute; left:0; color:#8eff71; font-size:.7em; top:.25em; }
+  .ab ol { padding-left:1.5rem; margin-bottom:1.25rem; }
+  .ab ol li { color:#b0b0b0; font-size:.9rem; margin-bottom:.35rem; }
+  .ab table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:.78rem; margin:1rem 0 1.5rem; }
+  .ab table th { text-align:left; color:#8eff71; font-weight:700; border-bottom:1px solid rgba(142,255,113,.2);
+                  padding:.5rem .75rem; text-transform:uppercase; letter-spacing:.08em; font-size:.7rem; }
+  .ab table td { padding:.5rem .75rem; border-bottom:1px solid rgba(255,255,255,.04); color:#c8c8c8; }
+  .ab table tr:last-child td { border-bottom:none; }
+  .ab .article-warning { font-family:'JetBrains Mono',monospace; font-size:.73rem; color:rgba(250,204,21,.7);
+                          border:1px solid rgba(250,204,21,.2); background:rgba(250,204,21,.04);
+                          padding:.75rem 1rem; margin-top:1.5rem; }
+</style>
+
+<div id="article-modal" class="modal-backdrop" onclick="handleBackdropClick(event,'article-modal')" style="align-items:flex-start;padding:0;justify-content:center">
+  <div class="flex flex-col bg-[#0c0c0c]" style="width:100%;max-width:780px;height:100vh;border-left:1px solid rgba(255,255,255,.06);border-right:1px solid rgba(255,255,255,.06)" onclick="event.stopPropagation()">
+
+    <!-- Top bar -->
+    <div class="flex items-center justify-between flex-shrink-0 px-8" style="height:50px;background:#080808;border-bottom:1px solid rgba(255,255,255,.05)">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+        <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Decrypted_Briefing.txt</span>
+      </div>
+      <button onclick="closeModal('article-modal')" class="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-white hover:bg-white/5 transition-all">
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div id="article-modal-panel" class="flex-1 overflow-y-auto" style="padding:2.75rem 3.5rem 5rem">
+
+      <!-- Header -->
+      <div style="margin-bottom:2.5rem">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1.25rem">
+          <span id="article-category-badge" style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;padding:3px 10px;border:1px solid"></span>
+          <span class="font-mono text-[10px] tracking-widest" style="color:#6b7280" id="article-date"></span>
+        </div>
+        <h1 id="article-title" style="font-family:'Space Grotesk',sans-serif;font-size:clamp(1.5rem,3.5vw,2.1rem);font-weight:800;color:#fff;line-height:1.2;letter-spacing:-0.025em;margin-bottom:1.5rem"></h1>
+        <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:1.5rem">
+          <div id="article-author-avatar" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:#8eff71;border:1px solid rgba(142,255,113,.25);flex-shrink:0"></div>
+          <div>
+            <p id="article-author" style="font-family:'Space Grotesk',sans-serif;font-size:.875rem;font-weight:600;color:#e5e5e5;margin:0"></p>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.15em;margin:.25rem 0 0"></p>
+          </div>
+        </div>
+        <div style="height:1px;background:linear-gradient(90deg,rgba(142,255,113,.35) 0%,transparent 65%)"></div>
+      </div>
+
+      <!-- Body -->
+      <div id="article-content" class="ab"></div>
+
+    </div>
+  </div>
+</div>
+
+<div id="delete-account-modal" class="modal-backdrop" onclick="handleBackdropClick(event, 'delete-account-modal')">
+  <div class="max-w-md w-full bg-[#131313] border border-red-800/40 p-10 relative shadow-2xl" onclick="event.stopPropagation()">
+    <button onclick="closeModal('delete-account-modal')" class="absolute top-4 right-4 text-on-surface-variant hover:text-white transition-colors">
       <span class="material-symbols-outlined">close</span>
     </button>
-    <div class="mb-6">
-      <span class="w-2 h-2 bg-primary inline-block mr-2 animate-pulse"></span>
-      <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Decrypted_Briefing.txt</span>
+    <div class="flex items-center gap-3 mb-6">
+      <span class="material-symbols-outlined text-red-500 text-3xl">warning</span>
+      <div>
+        <p class="font-mono text-[10px] uppercase tracking-widest text-red-500 mb-1">IRREVERSIBLE_ACTION.EXE</p>
+        <h2 class="font-headline text-2xl font-bold text-white">Delete Account</h2>
+      </div>
     </div>
-    <h2 id="article-title" class="font-headline text-3xl font-bold mb-6 text-white"></h2>
-    <div id="article-content" class="text-on-surface-variant text-sm leading-relaxed space-y-4 font-mono hide-scrollbar overflow-y-auto max-h-[60vh]"></div>
+    <p class="text-on-surface-variant text-sm font-mono leading-relaxed mb-6">
+      This will permanently delete your account, portfolio, reputation score, and all contribution records. This action <span class="text-red-400 font-bold">cannot be undone</span>.
+    </p>
+    <p class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mb-2">Type your username to confirm</p>
+    <input type="text" id="delete-confirm-input" class="data-input w-full mb-6" placeholder="your_username"/>
+    <div class="flex gap-3">
+      <button onclick="closeModal('delete-account-modal')" class="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-mono text-xs uppercase tracking-widest hover:bg-surface-container transition-all">Cancel</button>
+      <button onclick="deleteSelfAccount()" class="flex-1 py-3 bg-red-600 text-white font-headline font-bold text-xs uppercase tracking-widest hover:bg-red-700 transition-all">Confirm Delete</button>
+    </div>
   </div>
 </div>
 

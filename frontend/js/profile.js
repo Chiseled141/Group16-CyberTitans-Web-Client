@@ -18,8 +18,129 @@ async function loadOperativeData() {
             if (document.getElementById('input-username')) document.getElementById('input-username').value = currentUser.username || "@unknown";
             const roleEl = document.getElementById('profile-role');
             if (roleEl) roleEl.innerText = user.role || 'MEMBER';
+
+            // Load tags from experiences
+            const tags = (user.experiences || []).map(e => e.name).filter(Boolean);
+            _renderTags(tags);
         } else if (response.status === 403 || response.status === 401) { logout(); }
     } catch (error) { console.error("[SYSTEM] Error loading user data:", error); }
+}
+
+// ── Tag system ─────────────────────────────────────────────────────────────
+
+const _tagColors = ['tag-primary', 'tag-secondary', 'tag-tertiary', 'tag-gold'];
+
+function _renderTags(tags) {
+    const list = document.getElementById('tag-list');
+    if (!list) return;
+    list.innerHTML = tags.map((tag, i) => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 ${_tagColors[i % _tagColors.length]} text-[11px] font-mono">
+            ${tag}
+            <button onclick="removeTag('${tag.replace(/'/g, "\\'")}')" class="opacity-50 hover:opacity-100 transition-opacity leading-none">&times;</button>
+        </span>`).join('');
+}
+
+function _getTags() {
+    const list = document.getElementById('tag-list');
+    if (!list) return [];
+    return [...list.querySelectorAll('span')].map(s => s.childNodes[0].textContent.trim()).filter(Boolean);
+}
+
+function addTag() {
+    const input = document.getElementById('tag-input');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val) return;
+    const current = _getTags();
+    if (current.includes(val)) { showToast('Tag already exists', 'error'); return; }
+    if (current.length >= 10) { showToast('Max 10 tags allowed', 'error'); return; }
+    _renderTags([...current, val]);
+    input.value = '';
+    input.focus();
+}
+
+function removeTag(tag) {
+    _renderTags(_getTags().filter(t => t !== tag));
+}
+
+function handleTagKeydown(event) {
+    if (event.key === 'Enter') { event.preventDefault(); addTag(); }
+}
+
+async function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate type & size (max 2MB)
+    if (!file.type.startsWith('image/')) return showToast('Invalid file type. Images only.', 'error');
+    if (file.size > 2 * 1024 * 1024)    return showToast('File too large. Max 2MB.', 'error');
+
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!savedUserStr || !token) return showToast('Session expired. Please log in again.', 'error');
+
+    const currentUser = JSON.parse(savedUserStr);
+
+    // Preview immediately (local blob URL)
+    const previewUrl = URL.createObjectURL(file);
+    const avatarImg = document.getElementById('profile-avatar');
+    if (avatarImg) avatarImg.src = previewUrl;
+
+    // Show uploading overlay
+    const overlay = document.getElementById('avatar-upload-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+
+    try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}/avatar`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const newAvatarUrl = data.avatarUrl || previewUrl;
+
+            // Persist new avatar URL in storage
+            currentUser.avatar = newAvatarUrl;
+            const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+            storage.setItem('cyber_user', JSON.stringify(currentUser));
+
+            if (avatarImg) avatarImg.src = newAvatarUrl;
+            showToast('Avatar updated successfully!', 'success');
+        } else {
+            // Backend not ready yet — keep local preview, save as base64 fallback
+            const reader = new FileReader();
+            reader.onload = e => {
+                const base64 = e.target.result;
+                currentUser.avatar = base64;
+                const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+                storage.setItem('cyber_user', JSON.stringify(currentUser));
+                if (avatarImg) avatarImg.src = base64;
+            };
+            reader.readAsDataURL(file);
+            showToast('Avatar saved locally (server sync pending).', 'success');
+        }
+    } catch {
+        // Offline fallback — base64 in storage
+        const reader = new FileReader();
+        reader.onload = e => {
+            const base64 = e.target.result;
+            currentUser.avatar = base64;
+            const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+            storage.setItem('cyber_user', JSON.stringify(currentUser));
+            if (avatarImg) avatarImg.src = base64;
+        };
+        reader.readAsDataURL(file);
+        showToast('Avatar saved locally.', 'success');
+    } finally {
+        if (overlay) overlay.classList.add('hidden');
+        // Reset input so same file can be re-selected
+        event.target.value = '';
+    }
 }
 
 async function saveAccountProfile() {
@@ -28,9 +149,13 @@ async function saveAccountProfile() {
     if (!savedUserStr || !token) return showToast('Lỗi: Phiên đăng nhập hết hạn!', 'error');
     
     const currentUser = JSON.parse(savedUserStr);
+    const tags = _getTags();
     const payload = {
-        name: document.getElementById('input-name').value, email: document.getElementById('input-email').value,
-        phone: document.getElementById('input-phone').value, description: document.getElementById('input-bio').value
+        name: document.getElementById('input-name').value,
+        email: document.getElementById('input-email').value,
+        phone: document.getElementById('input-phone').value,
+        description: document.getElementById('input-bio').value,
+        experiences: tags.map(t => ({ name: t }))
     };
 
     try {
@@ -223,6 +348,11 @@ async function loadPortfolioData() {
 
     } catch (err) {
         console.error("[PORTFOLIO]", err);
+        ['pf-skills-certified','pf-skills-declared'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.querySelector('.italic')?.textContent === 'Loading...')
+                el.innerHTML = '<span class="font-mono text-[10px] text-on-surface-variant italic">—</span>';
+        });
     }
 }
 
@@ -248,8 +378,7 @@ function _pfRenderHero(user) {
                               ' px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-widest shrink-0';
     }
 
-    const clearanceMap = { 'SUPER ADMIN': 'CLEARANCE: OMEGA', 'ADMIN': 'CLEARANCE: ALPHA' };
-    set('portfolio-clearance-line', clearanceMap[user.role] || `CLEARANCE: ${user.role || 'DELTA'}`);
+    set('portfolio-clearance-line', `ROLE: ${user.role || 'MEMBER'}`);
 }
 
 /* §2 — populate stat cards */
@@ -425,6 +554,39 @@ window.onload = function() {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
     showToast('CV export opened — print or save as PDF', 'success');
+}
+
+async function deleteSelfAccount() {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!savedUserStr || !token) return showToast('Session expired.', 'error');
+
+    const currentUser = JSON.parse(savedUserStr);
+    const input = document.getElementById('delete-confirm-input');
+    const typed = input ? input.value.trim() : '';
+
+    if (typed !== currentUser.username) {
+        showToast('Username does not match. Deletion cancelled.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            closeModal('delete-account-modal');
+            showToast('Account deleted. Logging out...', 'success');
+            setTimeout(() => logout(), 1500);
+        } else {
+            const err = await response.json().catch(() => ({}));
+            showToast(`Error: ${err.message || 'Could not delete account.'}`, 'error');
+        }
+    } catch {
+        showToast('Server error. Please try again.', 'error');
+    }
 }
 
 async function adminDeleteUser(userId) {

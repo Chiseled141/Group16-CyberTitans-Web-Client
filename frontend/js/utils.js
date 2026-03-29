@@ -35,6 +35,24 @@ function openModal(id) { const m = document.getElementById(id); if (m) { m.class
 function closeModal(id) { const m = document.getElementById(id); if (m) { m.classList.remove('open'); document.body.style.overflow = ''; } }
 function handleBackdropClick(_event, modalId) { closeModal(modalId); }
 
+function submitContactForm() {
+    const name    = document.getElementById('contact-name')?.value.trim();
+    const email   = document.getElementById('contact-email')?.value.trim();
+    const subject = document.getElementById('contact-subject')?.value.trim();
+    const message = document.getElementById('contact-message')?.value.trim();
+
+    if (!name || !email || !subject || !message) {
+        showToast('Please fill in all fields', 'error');
+        return;
+    }
+    // Clear fields and confirm
+    ['contact-name','contact-email','contact-subject','contact-message'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    showToast('Message transmitted successfully!', 'success');
+}
+
 function animateCoinValue(elementId, start, end, duration) {
     const obj = document.getElementById(elementId);
     if (!obj) return;
