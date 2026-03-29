@@ -148,6 +148,21 @@
   </div>
 </div>
 
+<div id="project-analytics-modal" class="modal-backdrop" onclick="handleBackdropClick(event, 'project-analytics-modal')">
+  <div class="max-w-2xl w-full bg-[#131313] border border-outline-variant/30 relative shadow-2xl" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between px-8 py-5 border-b border-white/5">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-primary animate-pulse"></span>
+        <span class="font-mono text-[10px] uppercase tracking-widest text-primary">PROJECT_ANALYTICS.EXE</span>
+      </div>
+      <button onclick="closeModal('project-analytics-modal')" class="text-on-surface-variant hover:text-white transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div id="project-analytics-body" class="p-8 overflow-y-auto hide-scrollbar max-h-[75vh]"></div>
+  </div>
+</div>
+
 <div id="toast" class="glass-panel border border-primary/20 px-6 py-4 flex items-center gap-4">
   <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
   <span id="toast-text" class="text-sm font-mono text-on-surface"></span>
