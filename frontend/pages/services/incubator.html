@@ -104,7 +104,9 @@
         <h2 class="font-headline text-3xl font-bold mb-4">Submit Your Pitch</h2>
         <p class="text-on-surface-variant text-sm max-w-md mx-auto mb-6">New project pitches are accepted at the start of each semester. Don't wait — great ideas get teams.</p>
         <div class="flex gap-4 justify-center">
-          <button onclick="openModal('login-modal')" class="px-8 py-3 bg-primary text-[#0d6100] font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Pitch a Project</button>
+          <button id="btn-register-incubator"
+            onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');}else{openModal('login-modal');}})(this)"
+            class="px-8 py-3 bg-primary text-[#0d6100] font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Pitch a Project</button>
           <button onclick="showPage('projects')" class="px-8 py-3 border border-primary/30 text-primary font-bold uppercase tracking-widest text-sm hover:bg-primary/10 transition-all">See Active Projects</button>
         </div>
       </div>

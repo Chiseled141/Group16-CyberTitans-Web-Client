@@ -38,6 +38,8 @@ function initializeApp() {
     buildProjects();
     buildPublications();
     buildFaqAndPolicies();
+    buildAnnouncements();
+    buildEvents();
 
     const activePage = document.querySelector('.page.active');
     if (activePage && activePage.id === 'page-my-profile') {

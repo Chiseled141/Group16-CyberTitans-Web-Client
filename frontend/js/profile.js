@@ -145,9 +145,9 @@ async function handleAvatarUpload(event) {
 
 async function saveAccountProfile() {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token'); 
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
     if (!savedUserStr || !token) return showToast('Lỗi: Phiên đăng nhập hết hạn!', 'error');
-    
+
     const currentUser = JSON.parse(savedUserStr);
     const tags = _getTags();
     const payload = {
@@ -165,7 +165,7 @@ async function saveAccountProfile() {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
-            showToast('Protocol Uploaded! Data has been synchronized.', 'success');
+            showToast('Profile saved successfully.', 'success');
             currentUser.name = payload.name;
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
@@ -198,7 +198,7 @@ async function openProfileModal(id) {
         // --- LOGIC PHÂN QUYỀN HIỂN THỊ NÚT BẤM ---
         const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
         const currentUser = JSON.parse(savedUserStr);
-        const viewerRole = currentUser.role; 
+        const viewerRole = currentUser.role;
 
         let actionButtonsHTML = '';
 
@@ -206,15 +206,27 @@ async function openProfileModal(id) {
         if (currentUser.id === user.id) {
             actionButtonsHTML = `
                 <button onclick="showPage('my-profile'); closeProfileModal();" class="w-full bg-secondary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px]">
-                    // EDIT MY TACTICAL DATA
+                    EDIT MY PROFILE
                 </button>`;
-        } 
+        }
         // KỊCH BẢN 2: Xem Profile của người khác
         else {
-            actionButtonsHTML = `
-                <button onclick="handleMentorRequest(${user.id}, '${user.name}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
-                    MENTOR REQUEST (500 COINS)
-                </button>
+            const pendingReq = getMyPendingRequest(user.id);
+            if (pendingReq) {
+                actionButtonsHTML = `
+                    <div class="w-full bg-yellow-500/10 border border-yellow-500/30 p-3 mb-3 text-center font-mono text-[10px] text-yellow-400 uppercase tracking-widest">
+                        ● Request pending since ${new Date(pendingReq.timestamp).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+                    </div>
+                    <button onclick="cancelMentorRequest(${user.id})" class="w-full bg-red-600/20 border border-red-500/50 text-red-400 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px] mb-2">
+                        CANCEL REQUEST
+                    </button>`;
+            } else {
+                actionButtonsHTML = `
+                    <button onclick="handleMentorRequest(${user.id}, '${user.name}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
+                        MENTOR REQUEST (500 COINS)
+                    </button>`;
+            }
+            actionButtonsHTML += `
                 <button class="w-full bg-[#111] border border-white/10 text-white font-bold font-mono tracking-widest py-3.5 hover:border-primary transition-all text-[11px]">
                     MESSAGE
                 </button>`;
@@ -345,6 +357,7 @@ async function loadPortfolioData() {
         _pfRenderStats(user, userRank, userScore);
         _pfRenderSkills(user.experiences || []);
         _pfRenderTimeline(user.experiences || []);
+        _pfRenderContributions(user);
 
     } catch (err) {
         console.error("[PORTFOLIO]", err);
@@ -512,6 +525,48 @@ function _pfRenderTimeline(experiences) {
     }).join('');
 
     container.innerHTML = `<div class="pf-timeline-line"></div>${nodes}`;
+}
+
+/* §5 — Project contribution analytics (UC005) */
+async function _pfRenderContributions(user) {
+    const container = document.getElementById('pf-contributions-container');
+    if (!container) return;
+    try {
+        const response = await fetch(`${API_BASE_URL}/projects`);
+        if (!response.ok) throw new Error();
+        const projects = await response.json();
+        const mine = projects.filter(p =>
+            (p.members || []).some(m =>
+                m.memberName === user.name || String(m.memberId) === String(user.id)
+            )
+        );
+        if (!mine.length) {
+            container.innerHTML = `<span class="font-mono text-[10px] text-on-surface-variant italic">No project contributions on record.</span>`;
+            return;
+        }
+        container.innerHTML = mine.map(p => {
+            const myMember = (p.members || []).find(m => m.memberName === user.name);
+            const total = p.totalTasks || 0;
+            const done = p.completedTasks || 0;
+            const pct = total ? Math.round((done / total) * 100) : 0;
+            return `
+                <div class="bg-surface-container-low border border-outline-variant/20 p-4 hover:border-primary/30 transition-all">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-white font-bold text-sm font-headline">${p.name}</h4>
+                            <p class="font-mono text-[10px] text-on-surface-variant uppercase mt-0.5">${myMember ? myMember.role : 'Contributor'}</p>
+                        </div>
+                        <span class="font-mono text-xs text-primary font-bold">${pct}%</span>
+                    </div>
+                    <div class="skill-bar">
+                        <div class="skill-bar-fill verified" style="width:${pct}%" data-w="${pct}"></div>
+                    </div>
+                    <p class="font-mono text-[9px] text-on-surface-variant mt-2">${done} / ${total} tasks completed</p>
+                </div>`;
+        }).join('');
+    } catch {
+        container.innerHTML = `<span class="font-mono text-[10px] text-on-surface-variant italic">Contribution data unavailable.</span>`;
+    }
 }
 
 function generateVerifiedCV() {

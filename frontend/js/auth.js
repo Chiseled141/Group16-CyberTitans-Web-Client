@@ -31,6 +31,13 @@ function applyLoginState(userData) {
             const initials = userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
             avatarDiv.innerHTML = `<span class="text-black font-bold text-[10px] font-mono">${initials}</span>`;
         }
+
+        // Show Mentor Hub link only for MENTOR role
+        const mentorHubLink = document.getElementById('nav-mentor-hub-link');
+        if (mentorHubLink) {
+            const isMentor = (userData.role || '').toUpperCase() === 'MENTOR';
+            mentorHubLink.classList.toggle('hidden', !isMentor);
+        }
     }
 }
 

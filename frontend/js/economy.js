@@ -42,7 +42,7 @@ async function handleMentorRequest(mentorId, mentorName) {
     if (!savedUserStr || !token) return showToast('Vui lòng Đăng nhập!', 'error');
 
     const currentUser = JSON.parse(savedUserStr);
-    const MENTOR_COST = 500; 
+    const MENTOR_COST = 500;
 
     if (!currentUser.coin || currentUser.coin < MENTOR_COST) return showToast(`Không đủ ${MENTOR_COST} Coins!`, 'error');
 
@@ -60,8 +60,21 @@ async function handleMentorRequest(mentorId, mentorName) {
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
 
-            applyLoginState(currentUser); 
-            showToast(`GIAO DỊCH THÀNH CÔNG! Trừ ${MENTOR_COST} Coins.`, 'success');
+            // Save request to localStorage so mentor sees it in their inbox
+            const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
+            requests.push({
+                id: 'req-' + Date.now(),
+                mentorId: mentorId,
+                mentorName: mentorName,
+                menteeId: currentUser.id,
+                menteeName: currentUser.name,
+                status: 'PENDING',
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('mentorship_requests', JSON.stringify(requests));
+
+            applyLoginState(currentUser);
+            showToast(`Request sent to ${mentorName}! −${MENTOR_COST} Coins.`, 'success');
 
             setTimeout(() => { showToast(`[SYSTEM] ${mentorName} has received your request!`, 'success'); }, 3000);
         } else {
@@ -69,4 +82,24 @@ async function handleMentorRequest(mentorId, mentorName) {
             showToast(`LỖI: ${errorData.message}`, 'error');
         }
     } catch (error) { showToast('Connection failed.', 'error'); }
+}
+
+// UC008 — Cancel own pending mentorship request
+function getMyPendingRequest(mentorId) {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return null;
+    const currentUser = JSON.parse(savedUserStr);
+    const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
+    return requests.find(r => r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING') || null;
+}
+
+function cancelMentorRequest(mentorId) {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return;
+    const currentUser = JSON.parse(savedUserStr);
+    const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
+    const updated = requests.filter(r => !(r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING'));
+    localStorage.setItem('mentorship_requests', JSON.stringify(updated));
+    showToast('Mentorship request cancelled.', 'success');
+    openProfileModal(mentorId); // Re-render the modal to reflect new state
 }

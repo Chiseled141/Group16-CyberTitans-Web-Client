@@ -9,6 +9,7 @@
       <a href="#" onclick="showPage('projects')" data-page="projects" class="nav-link text-on-surface-variant hover:text-white transition-colors">Projects</a>
       <a href="#" onclick="showPage('team')" data-page="team" class="nav-link text-on-surface-variant hover:text-white transition-colors">Team</a>
       <a href="#" onclick="showPage('publications')" data-page="publications" class="nav-link text-on-surface-variant hover:text-white transition-colors">Blog</a>
+      <a href="#" onclick="showPage('events')" data-page="events" class="nav-link text-on-surface-variant hover:text-white transition-colors">Events</a>
 <a href="#" onclick="showPage('ranking')" data-page="ranking" class="nav-link text-[#D4AF37] font-bold hover:brightness-125 transition-colors">Ranking</a>
     </nav>
     
@@ -38,6 +39,16 @@
                 </div>
         </div>
 
+        <a href="#" id="nav-mentor-hub-link" onclick="showPage('mentor-hub'); return false;"
+           class="hidden font-mono text-[10px] uppercase tracking-widest text-primary border border-primary/30 px-3 py-1.5 hover:bg-primary hover:text-black transition-all">
+           Mentor Hub
+        </a>
+
+        <button onclick="openAnnouncementsPanel()" id="notif-bell-btn" title="Announcements" class="relative text-on-surface-variant hover:text-white transition-colors flex items-center justify-center">
+            <span class="material-symbols-outlined text-[18px]">notifications</span>
+            <span id="notif-badge" class="hidden absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-red-500 rounded-full text-[8px] font-bold text-white flex items-center justify-center px-0.5 leading-none"></span>
+        </button>
+
         <button onclick="logout()" title="Disconnect" class="text-on-surface-variant hover:text-[#ff4d4d] transition-colors flex items-center justify-center border-l border-white/10 pl-5">
             <span class="material-symbols-outlined text-[18px]">logout</span>
         </button>
@@ -53,6 +64,7 @@
   <div id="mobile-menu" class="hidden lg:hidden bg-surface-container-low border-t border-outline-variant/10 px-6 py-4 space-y-3">
     <a href="#" onclick="showPage('home'); toggleMobileMenu()" class="block text-sm font-headline uppercase text-on-surface-variant hover:text-primary py-2">Home</a>
     <a href="#" onclick="showPage('services'); toggleMobileMenu()" class="block text-sm font-headline uppercase text-on-surface-variant hover:text-primary py-2">Programs</a>
+    <a href="#" onclick="showPage('events'); toggleMobileMenu()" class="block text-sm font-headline uppercase text-on-surface-variant hover:text-primary py-2">Events</a>
     <a href="#" onclick="showPage('ranking'); toggleMobileMenu()" class="block text-sm font-headline uppercase text-[#D4AF37] py-2">Ranking</a>
   </div>
 </header>

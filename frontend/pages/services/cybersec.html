@@ -92,7 +92,9 @@
         <p class="font-mono text-secondary text-xs uppercase tracking-[0.3em] mb-3">Start hacking legally</p>
         <h2 class="font-headline text-3xl font-bold mb-4">Join the Security Lab</h2>
         <p class="text-on-surface-variant text-sm max-w-md mx-auto mb-6">No experience required. We'll take you from beginner CTF solves to advanced exploitation techniques.</p>
-        <button onclick="openModal('login-modal')" class="px-8 py-3 bg-secondary text-black font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Get Started</button>
+        <button id="btn-register-cybersec"
+          onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');}else{openModal('login-modal');}})(this)"
+          class="px-8 py-3 bg-secondary text-black font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Get Started</button>
       </div>
     </div>
 

@@ -308,6 +308,51 @@ async function buildRanking() {
     } catch (err) { console.error("Ranking error:", err); }
 }
 
+const STATIC_PROJECTS = [
+    {
+        id: 1, name: 'CyberTitans Web Platform', status: 'ACTIVE',
+        description: 'Full-stack club management system built with Spring Boot and Vanilla JS. Features member profiles, mentor matching, dynamic CV generation, and a Cyber Coin economy.',
+        techStack: ['Spring Boot', 'Java', 'MySQL', 'Tailwind CSS', 'Vanilla JS'],
+        members: [
+            { memberName: 'Vũ Sơn Thái',   role: 'Lead Dev'  },
+            { memberName: 'Nguyễn Minh Khoa', role: 'Backend'  },
+            { memberName: 'Trần Thị Lan',   role: 'Frontend' }
+        ],
+        totalTasks: 24, completedTasks: 18
+    },
+    {
+        id: 2, name: 'CTF Automated Scorer', status: 'ACTIVE',
+        description: 'Real-time Capture The Flag scoring engine with dynamic flag verification, team leaderboards via WebSocket, and Docker-based challenge sandboxing.',
+        techStack: ['Python', 'FastAPI', 'Docker', 'Redis', 'WebSocket'],
+        members: [
+            { memberName: 'Lê Hoàng Nam',   role: 'Architect' },
+            { memberName: 'Phạm Quốc Huy',  role: 'DevOps'    }
+        ],
+        totalTasks: 16, completedTasks: 10
+    },
+    {
+        id: 3, name: 'Network Intrusion Detector', status: 'IN_PROGRESS',
+        description: 'ML-based IDS that classifies network traffic using a Random Forest model trained on the NSL-KDD dataset. Achieves 97.4% accuracy on test set.',
+        techStack: ['Python', 'Scikit-learn', 'Pandas', 'Wireshark', 'Flask'],
+        members: [
+            { memberName: 'Đỗ Thanh Tùng',  role: 'ML Engineer' },
+            { memberName: 'Bùi Thị Mai',    role: 'Data Analyst' },
+            { memberName: 'Nguyễn Văn An',  role: 'Backend'      }
+        ],
+        totalTasks: 20, completedTasks: 13
+    },
+    {
+        id: 4, name: 'SecureVault Password Manager', status: 'COMPLETED',
+        description: 'End-to-end encrypted password manager with AES-256 vault storage, TOTP-based 2FA, and a browser extension for auto-fill. Open-sourced on the club GitHub.',
+        techStack: ['React', 'Node.js', 'AES-256', 'TOTP', 'MongoDB'],
+        members: [
+            { memberName: 'Hoàng Thị Thu',  role: 'Full Stack' },
+            { memberName: 'Trần Minh Đức',  role: 'Security'   }
+        ],
+        totalTasks: 18, completedTasks: 18
+    }
+];
+
 async function buildProjects() {
     const container = document.getElementById('projects-container');
     if (!container) return;
@@ -315,19 +360,20 @@ async function buildProjects() {
         const response = await fetch(`${API_BASE_URL}/projects`);
         if (!response.ok) throw new Error('fetch failed');
         const projects = await response.json();
-        if (!projects.length) {
-            container.innerHTML = `<div class="col-span-2 text-center py-20 font-mono text-gray-500 text-sm uppercase tracking-widest">[ No deployments found ]</div>`;
-            return;
-        }
-        container.innerHTML = projects.map(p => _buildProjectCard(p)).join('');
+        const data = projects.length ? projects : STATIC_PROJECTS;
+        container.innerHTML = data.map(p => _buildProjectCard(p)).join('');
         requestAnimationFrame(() => {
             container.querySelectorAll('.skill-bar-fill[data-w]').forEach(el => {
                 el.style.width = el.dataset.w + '%';
             });
         });
     } catch (err) {
-        console.error("Projects error:", err);
-        container.innerHTML = `<div class="col-span-2 text-center py-20 font-mono text-gray-500 text-sm uppercase tracking-widest">[ Failed to load deployments ]</div>`;
+        container.innerHTML = STATIC_PROJECTS.map(p => _buildProjectCard(p)).join('');
+        requestAnimationFrame(() => {
+            container.querySelectorAll('.skill-bar-fill[data-w]').forEach(el => {
+                el.style.width = el.dataset.w + '%';
+            });
+        });
     }
 }
 
@@ -435,6 +481,315 @@ async function openProjectAnalytics(id) {
 }
 
 function buildPublications() {}
+
+// ─── ANNOUNCEMENTS ───────────────────────────────────────────────────────────
+
+const ANNOUNCEMENTS = [
+  {
+    id: 'ann-001', type: 'EVENT',
+    title: 'IU Spring Hackathon 2026 — Registration Now Open',
+    body: 'Registration for the IU Spring Hackathon 2026 is officially open. Form a team of 2–4 and register before April 5th to compete for prizes and earn contribution points toward your portfolio.',
+    date: '28.MAR.2026'
+  },
+  {
+    id: 'ann-002', type: 'SYSTEM',
+    title: 'Mentor Reputation Rankings Recalculated for Q1 2026',
+    body: 'Q1 2026 reputation scores have been updated across all mentor profiles. Rankings now reflect completed mentorship sessions, community upvotes, and verified project guidance outcomes.',
+    date: '27.MAR.2026'
+  },
+  {
+    id: 'ann-003', type: 'EVENT',
+    title: 'Workshop: Web Exploitation Basics — April 2 @ 14:00',
+    body: 'Join us in Room B208 on April 2nd at 14:00 for a hands-on session covering SQL injection, XSS, and CSRF. Attendance is tracked and counts toward your portfolio. Open to all skill levels.',
+    date: '25.MAR.2026'
+  },
+  {
+    id: 'ann-004', type: 'MENTOR',
+    title: 'Mentorship Program Is Now Live',
+    body: 'The CyberTitans Mentorship Program is officially active. Browse available mentors on the Programs page, filter by skill, and send a request using 500 Cyber Coins to start your 1-on-1 sessions.',
+    date: '24.MAR.2026'
+  },
+  {
+    id: 'ann-005', type: 'SYSTEM',
+    title: 'Portal Update — Verified Portfolio & CV Export',
+    body: 'The member portal has been updated with the new Verified Portfolio and CV Export feature. Navigate to your Profile and click "MY PORTFOLIO" to generate a print-ready version of your proof-of-work.',
+    date: '20.MAR.2026'
+  },
+  {
+    id: 'ann-006', type: 'INFO',
+    title: 'Club Privacy Policy Updated',
+    body: 'Our privacy policy has been revised to reflect current data handling practices. Key changes include clarity on member data retention periods and portfolio visibility settings. Review the full policy in the FAQ section.',
+    date: '15.MAR.2026'
+  }
+];
+
+const _ANN_META = {
+  EVENT:  { color: '#60a5fa', label: 'EVENT',  icon: 'calendar_month' },
+  SYSTEM: { color: '#D4AF37', label: 'SYSTEM', icon: 'settings'       },
+  MENTOR: { color: '#8eff71', label: 'MENTOR', icon: 'school'          },
+  INFO:   { color: '#c084fc', label: 'INFO',   icon: 'info'            }
+};
+
+function _getReadIds() {
+  try { return JSON.parse(localStorage.getItem('read_announcements') || '[]'); } catch { return []; }
+}
+
+function _markReadId(id) {
+  const read = _getReadIds();
+  if (!read.includes(id)) { read.push(id); localStorage.setItem('read_announcements', JSON.stringify(read)); }
+}
+
+function _updateBellBadge() {
+  const read = _getReadIds();
+  const count = ANNOUNCEMENTS.filter(a => !read.includes(a.id)).length;
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : String(count);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function openAnnouncementsPanel() {
+  const backdrop = document.getElementById('announcements-backdrop');
+  const panel    = document.getElementById('announcements-panel');
+  if (backdrop) backdrop.classList.remove('hidden');
+  if (panel)    panel.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  _renderAnnPanel();
+}
+
+function closeAnnouncementsPanel() {
+  const backdrop = document.getElementById('announcements-backdrop');
+  const panel    = document.getElementById('announcements-panel');
+  if (backdrop) backdrop.classList.add('hidden');
+  if (panel)    panel.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function markAllAnnouncementsRead() {
+  localStorage.setItem('read_announcements', JSON.stringify(ANNOUNCEMENTS.map(a => a.id)));
+  _updateBellBadge();
+  _renderAnnPanel();
+  _renderAnnPage();
+}
+
+function viewAnnouncement(id) {
+  _markReadId(id);
+  _updateBellBadge();
+  _renderAnnPanel();
+  _renderAnnPage();
+}
+
+function _renderAnnPanel() {
+  const container = document.getElementById('ann-panel-list');
+  if (!container) return;
+  const read = _getReadIds();
+  container.innerHTML = ANNOUNCEMENTS.map(a => {
+    const t = _ANN_META[a.type] || _ANN_META.INFO;
+    const isRead = read.includes(a.id);
+    return `
+      <div class="border-b border-white/5 px-5 py-4 hover:bg-white/[0.025] transition-colors cursor-pointer ${isRead ? 'opacity-55' : ''}"
+           onclick="viewAnnouncement('${a.id}')">
+        <div class="flex items-start gap-3">
+          <div class="w-7 h-7 flex items-center justify-center flex-shrink-0 mt-0.5"
+               style="background:${t.color}15;border:1px solid ${t.color}35">
+            <span class="material-symbols-outlined text-[14px]" style="color:${t.color}">${t.icon}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="font-mono text-[9px] uppercase tracking-widest" style="color:${t.color}">${t.label}</span>
+              <span class="font-mono text-[9px] text-gray-500 flex-shrink-0">${a.date}</span>
+            </div>
+            <p class="text-sm text-white font-bold leading-tight mb-1">${a.title}</p>
+            <p class="text-xs text-gray-500 font-mono leading-relaxed line-clamp-2">${a.body}</p>
+          </div>
+          <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2 ${isRead ? 'opacity-0' : 'bg-primary'}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _renderAnnPage(filterType) {
+  const container = document.getElementById('ann-page-list');
+  if (!container) return;
+  const read = _getReadIds();
+  const items = (filterType && filterType !== 'ALL')
+    ? ANNOUNCEMENTS.filter(a => a.type === filterType)
+    : ANNOUNCEMENTS;
+  if (!items.length) {
+    container.innerHTML = `<div class="text-center py-20 font-mono text-gray-500 text-xs uppercase tracking-widest">[ No announcements ]</div>`;
+    return;
+  }
+  container.innerHTML = items.map(a => {
+    const t = _ANN_META[a.type] || _ANN_META.INFO;
+    const isRead = read.includes(a.id);
+    return `
+      <div class="group bg-[#0a0a0a] border ${isRead ? 'border-white/5' : 'border-primary/15'} p-6 relative overflow-hidden hover:border-primary/40 transition-all duration-300 cursor-pointer"
+           onclick="viewAnnouncement('${a.id}')">
+        <div class="absolute top-0 left-[-100%] w-full h-[2px] group-hover:left-0 transition-all duration-500"
+             style="background:${t.color}"></div>
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 flex items-center justify-center flex-shrink-0"
+               style="background:${t.color}15;border:1px solid ${t.color}40">
+            <span class="material-symbols-outlined text-[18px]" style="color:${t.color}">${t.icon}</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <span class="font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 border"
+                    style="color:${t.color};border-color:${t.color}44;background:${t.color}11">${t.label}</span>
+              <span class="font-mono text-[10px] text-gray-500">${a.date}</span>
+              ${!isRead ? '<span class="font-mono text-[9px] text-primary uppercase tracking-widest animate-pulse">● NEW</span>' : ''}
+            </div>
+            <h3 class="text-white font-bold text-lg leading-tight mb-2 group-hover:text-primary transition-colors">${a.title}</h3>
+            <p class="text-gray-400 text-sm font-mono leading-relaxed">${a.body}</p>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterAnnouncements(type, btn) {
+  document.querySelectorAll('#ann-filter-bar button').forEach(b => {
+    b.classList.remove('text-primary', 'border-primary');
+    b.classList.add('text-gray-500', 'border-transparent');
+  });
+  btn.classList.remove('text-gray-500', 'border-transparent');
+  btn.classList.add('text-primary', 'border-primary');
+  _renderAnnPage(type);
+}
+
+function buildAnnouncements() {
+  _updateBellBadge();
+  _renderAnnPage();
+}
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+
+const EVENTS = [
+  {
+    id: 'evt-001', type: 'HACKATHON', typeColor: '#D4AF37',
+    title: 'IU Spring Hackathon 2026',
+    date: '12.APR.2026', time: '08:00 — 20:00',
+    location: 'Hall A, IU Campus',
+    description: 'A 12-hour team hackathon open to all IU students. Build a working prototype around the theme "Secure By Design". Prizes include internship opportunities and Cyber Coins.',
+    capacity: 50
+  },
+  {
+    id: 'evt-002', type: 'WORKSHOP', typeColor: '#60a5fa',
+    title: 'Web Exploitation Basics',
+    date: '02.APR.2026', time: '14:00 — 17:00',
+    location: 'Room B208, IU Campus',
+    description: 'Hands-on session covering SQL injection, XSS, CSRF, and SSRF. Bring your laptop. Attendance earns 50 Cyber Coins and is recorded in your verified portfolio.',
+    capacity: 30
+  },
+  {
+    id: 'evt-003', type: 'CTF', typeColor: '#c084fc',
+    title: 'VN-CTF 2026 — National Competition',
+    date: '20.APR.2026', time: '09:00 — 21:00',
+    location: 'Online',
+    description: 'National Capture The Flag competition. Categories: Web, Pwn, Crypto, Forensics, Reversing. Top 3 teams earn double Cyber Coins and verified achievement badges.',
+    capacity: 0
+  },
+  {
+    id: 'evt-004', type: 'WORKSHOP', typeColor: '#60a5fa',
+    title: 'Spring Boot Masterclass',
+    date: '08.APR.2026', time: '09:00 — 12:00',
+    location: 'Room C101, IU Campus',
+    description: 'Deep dive into Spring Boot 3.x: building REST APIs, Spring Security, and JPA. Prerequisites: basic Java knowledge. Limited seats — register early.',
+    capacity: 25
+  },
+  {
+    id: 'evt-005', type: 'SEMINAR', typeColor: '#8eff71',
+    title: 'Cybersecurity Career Paths in 2026',
+    date: '15.APR.2026', time: '15:00 — 17:00',
+    location: 'Auditorium, IU Campus',
+    description: 'Industry professionals share insights on penetration testing, security engineering, threat intelligence, and GRC. Open Q&A session included.',
+    capacity: 100
+  }
+];
+
+function _getJoinedEvents() {
+  try { return JSON.parse(localStorage.getItem('joined_events') || '[]'); } catch { return []; }
+}
+
+function joinEvent(eventId) {
+  const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+  if (!savedUserStr) { showToast('Please log in to join events.', 'error'); openModal('login-modal'); return; }
+  const joined = _getJoinedEvents();
+  if (joined.includes(eventId)) { showToast('Already registered for this event.', 'error'); return; }
+  joined.push(eventId);
+  localStorage.setItem('joined_events', JSON.stringify(joined));
+  showToast('Successfully joined! See you there.', 'success');
+  _renderEvents();
+}
+
+function leaveEvent(eventId) {
+  const joined = _getJoinedEvents().filter(id => id !== eventId);
+  localStorage.setItem('joined_events', JSON.stringify(joined));
+  showToast('Event registration cancelled.', 'success');
+  _renderEvents();
+}
+
+function _renderEvents(filterType) {
+  const container = document.getElementById('events-grid');
+  if (!container) return;
+  const joined = _getJoinedEvents();
+  const items = (filterType && filterType !== 'ALL') ? EVENTS.filter(e => e.type === filterType) : EVENTS;
+  if (!items.length) {
+    container.innerHTML = `<div class="col-span-3 text-center py-20 font-mono text-gray-500 text-xs uppercase tracking-widest">[ No events found ]</div>`;
+    return;
+  }
+  container.innerHTML = items.map(e => {
+    const isJoined = joined.includes(e.id);
+    const capacityText = e.capacity === 0 ? 'Unlimited' : e.capacity;
+    return `
+      <div class="group bg-[#0a0a0a] border ${isJoined ? 'border-primary/30' : 'border-white/10'} p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col">
+        <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500" style="background:${e.typeColor}"></div>
+        <div class="flex justify-between items-center mb-4">
+          <span class="font-mono text-[10px] uppercase tracking-widest px-2 py-0.5 border"
+                style="color:${e.typeColor};border-color:${e.typeColor}44;background:${e.typeColor}11">${e.type}</span>
+          ${isJoined ? '<span class="font-mono text-[9px] text-primary uppercase tracking-widest animate-pulse">● JOINED</span>' : ''}
+        </div>
+        <h3 class="text-white text-xl font-bold leading-tight mb-3 group-hover:text-primary transition-colors font-headline">${e.title}</h3>
+        <p class="text-gray-400 text-sm mb-5 leading-relaxed flex-1 font-mono">${e.description}</p>
+        <div class="border-t border-white/5 pt-4 space-y-2 mb-5">
+          <div class="flex items-center gap-2 font-mono text-xs text-gray-500">
+            <span class="material-symbols-outlined text-[14px]" style="color:${e.typeColor}">calendar_month</span>
+            ${e.date} · ${e.time}
+          </div>
+          <div class="flex items-center gap-2 font-mono text-xs text-gray-500">
+            <span class="material-symbols-outlined text-[14px]" style="color:${e.typeColor}">location_on</span>
+            ${e.location}
+          </div>
+          <div class="flex items-center gap-2 font-mono text-xs text-gray-500">
+            <span class="material-symbols-outlined text-[14px]" style="color:${e.typeColor}">group</span>
+            Capacity: ${capacityText}
+          </div>
+        </div>
+        ${isJoined
+          ? `<button onclick="leaveEvent('${e.id}')" class="w-full py-3 bg-red-600/20 border border-red-500/50 text-red-400 font-mono text-[10px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">CANCEL REGISTRATION</button>`
+          : `<button onclick="joinEvent('${e.id}')" class="w-full py-3 border font-mono text-[10px] uppercase tracking-widest transition-all hover:text-black" style="border-color:${e.typeColor};color:${e.typeColor}" onmouseover="this.style.background='${e.typeColor}'" onmouseout="this.style.background=''">JOIN EVENT</button>`
+        }
+      </div>`;
+  }).join('');
+}
+
+function filterEvents(type, btn) {
+  document.querySelectorAll('#events-filter-bar button').forEach(b => {
+    b.classList.remove('text-primary', 'border-primary');
+    b.classList.add('text-gray-500', 'border-transparent');
+  });
+  btn.classList.remove('text-gray-500', 'border-transparent');
+  btn.classList.add('text-primary', 'border-primary');
+  _renderEvents(type);
+}
+
+function buildEvents() {
+  _renderEvents();
+}
 
 let _mentorCache = null;
 

@@ -18,6 +18,9 @@ function showPage(name) {
     if (name === 'my-profile')     loadOperativeData();
     if (name === 'portfolio')      loadPortfolioData();
     if (name === 'service-mentor') buildMentorList();
+    if (name === 'announcements')  _renderAnnPage();
+    if (name === 'events')         _renderEvents();
+    if (name === 'mentor-hub')     buildMentorHub();
     window.scrollTo(0, 0);
 }
 
@@ -33,6 +36,15 @@ function showToast(msg, type = 'success') {
 
 function openModal(id) { const m = document.getElementById(id); if (m) { m.classList.add('open'); document.body.style.overflow = 'hidden'; } }
 function closeModal(id) { const m = document.getElementById(id); if (m) { m.classList.remove('open'); document.body.style.overflow = ''; } }
+
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const icon = document.getElementById('mobile-menu-icon');
+    if (!menu) return;
+    const isOpen = !menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', isOpen);
+    if (icon) icon.textContent = isOpen ? 'menu' : 'close';
+}
 function handleBackdropClick(_event, modalId) { closeModal(modalId); }
 
 function submitContactForm() {
