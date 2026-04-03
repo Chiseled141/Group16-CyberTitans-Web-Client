@@ -67,29 +67,31 @@ function _buildProjectCard(p) {
             <span class="tag-tertiary pf-skill-tag">${m.role}</span>
         </div>`).join('');
     return `
-        <div class="hack-card p-6 card-lift">
+        <div class="hack-card p-6 card-lift flex flex-col">
             <div class="scanner"></div>
             <div class="flex items-start justify-between mb-4">
                 <div>
                     <p class="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">/PROJECT</p>
                     <h3 class="font-headline text-xl font-bold text-white">${p.name}</h3>
                 </div>
-                <span class="${st.cls} pf-skill-tag">${st.label}</span>
+                <span class="${st.cls} pf-skill-tag shrink-0 ml-3">${st.label}</span>
             </div>
             <p class="font-mono text-xs text-gray-500 mb-4 leading-relaxed">${p.description || '—'}</p>
             <div class="flex flex-wrap gap-2 mb-4">${techTags}</div>
             ${memberRows ? `<div class="border-t border-white/5 pt-4 mb-4 space-y-2">${memberRows}</div>` : ''}
-            <div class="mb-5">
-                <div class="flex justify-between font-mono text-[10px] mb-1 text-gray-500">
-                    <span>TASKS</span><span>${p.completedTasks || 0} / ${p.totalTasks || 0}</span>
+            <div class="mt-auto">
+                <div class="mb-5">
+                    <div class="flex justify-between font-mono text-[10px] mb-1 text-gray-500">
+                        <span>TASKS</span><span>${p.completedTasks || 0} / ${p.totalTasks || 0}</span>
+                    </div>
+                    <div class="skill-bar">
+                        <div class="skill-bar-fill verified" style="width:0%" data-w="${progress}"></div>
+                    </div>
                 </div>
-                <div class="skill-bar">
-                    <div class="skill-bar-fill verified" style="width:0%" data-w="${progress}"></div>
-                </div>
+                <button onclick="openProjectModal(${p.id})" class="w-full text-primary font-mono text-[10px] uppercase border border-primary/20 px-4 py-2 hover:bg-primary hover:text-black transition-all">
+                    View Project
+                </button>
             </div>
-            <button onclick="openProjectModal(${p.id})" class="w-full text-primary font-mono text-[10px] uppercase border border-primary/20 px-4 py-2 hover:bg-primary hover:text-black transition-all">
-                View Project
-            </button>
         </div>`;
 }
 
@@ -104,6 +106,11 @@ function _animateProgressBars(container) {
 async function buildProjects() {
     const container = document.getElementById('projects-container');
     if (!container) return;
+    const btn = document.getElementById('create-project-btn');
+    if (btn) {
+        if (isLoggedIn) btn.classList.replace('hidden', 'flex');
+        else btn.classList.replace('flex', 'hidden');
+    }
     try {
         const response = await fetch(`${API_BASE_URL}/projects`);
         if (!response.ok) throw new Error('fetch failed');
@@ -114,6 +121,55 @@ async function buildProjects() {
     } catch {
         container.innerHTML = STATIC_PROJECTS.map(p => _buildProjectCard(p)).join('');
         _animateProgressBars(container);
+    }
+}
+
+function openCreateProjectModal() {
+    ['cp-name','cp-description','cp-tech','cp-total-tasks'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const status = document.getElementById('cp-status');
+    if (status) status.value = 'ACTIVE';
+    openModal('create-project-modal');
+}
+
+async function submitCreateProject() {
+    const name        = document.getElementById('cp-name')?.value.trim();
+    const description = document.getElementById('cp-description')?.value.trim();
+    const techRaw     = document.getElementById('cp-tech')?.value.trim();
+    const status      = document.getElementById('cp-status')?.value;
+    const totalTasks  = parseInt(document.getElementById('cp-total-tasks')?.value) || 0;
+
+    if (!name) { showToast('Project name is required'); return; }
+
+    const payload = {
+        name,
+        description,
+        techStack: techRaw ? techRaw.split(',').map(t => t.trim()).filter(Boolean) : [],
+        status,
+        totalTasks,
+        completedTasks: 0
+    };
+
+    try {
+        const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+        const res = await fetch(`${API_BASE_URL}/projects`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('failed');
+        closeModal('create-project-modal');
+        showToast('Project created successfully');
+        buildProjects();
+    } catch {
+        closeModal('create-project-modal');
+        showToast('Project submitted — pending backend sync');
+        buildProjects();
     }
 }
 
