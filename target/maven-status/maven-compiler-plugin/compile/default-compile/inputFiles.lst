@@ -1,0 +1,15 @@
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/CyberWebAppApplication.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/controller/AuthController.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/controller/PageController.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/controller/RankingController.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/controller/TeamController.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/dto/LoginDTO.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/dto/RankingDTO.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/entity/Role.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/entity/User.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/entity/UserExperience.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/repository/UserExperienceRepository.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/repository/UserRepository.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/security/JwtAuthFilter.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/security/JwtUtil.java
+/Users/chiseled/Documents/GitHub/CyberTitans-Web-Client/src/main/java/com/Se2/CyberWebApp/security/SecurityConfig.java
