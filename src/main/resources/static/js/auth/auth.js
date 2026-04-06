@@ -32,6 +32,13 @@ function applyLoginState(userData) {
             avatarDiv.innerHTML = `<span class="text-black font-bold text-[10px] font-mono">${initials}</span>`;
         }
 
+        // Change "Join the Club" to "My Dashboard" when logged in
+        const joinBtn = document.getElementById('home-join-btn');
+        if (joinBtn) {
+            joinBtn.textContent = 'My Profile';
+            joinBtn.onclick = () => showPage('my-profile');
+        }
+
         // Show Mentor Hub link only for MENTOR role
         const mentorHubLink = document.getElementById('nav-mentor-hub-link');
         if (mentorHubLink) {
@@ -80,6 +87,12 @@ function logout() {
     const navUser = document.getElementById('nav-user');
     if (navGuest) navGuest.classList.replace('hidden', 'flex');
     if (navUser) navUser.classList.replace('flex', 'hidden');
+
+    const joinBtn = document.getElementById('home-join-btn');
+    if (joinBtn) {
+        joinBtn.textContent = 'Join the Club';
+        joinBtn.onclick = () => openModal('login-modal');
+    }
 
     showPage('home'); showToast('DISCONNECTED.', 'success');
 }
