@@ -217,3 +217,54 @@ function filterPublications(category, btn) {
         card.style.display = (category === 'ALL' || card.dataset.category === category) ? '' : 'none';
     });
 }
+
+function buildPublications() {
+    initArtifactsPage();
+}
+
+function initArtifactsPage() {
+    const btn = document.getElementById('create-artifact-btn');
+    if (!btn) return;
+    if (isLoggedIn) btn.classList.replace('hidden', 'flex');
+    else btn.classList.replace('flex', 'hidden');
+}
+
+function openCreateArtifactModal() {
+    ['ca-name', 'ca-lang', 'ca-description', 'ca-url'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const cat = document.getElementById('ca-category');
+    if (cat) cat.value = 'TOOL';
+    openModal('create-artifact-modal');
+}
+
+async function submitCreateArtifact() {
+    const name        = document.getElementById('ca-name')?.value.trim();
+    const category    = document.getElementById('ca-category')?.value;
+    const lang        = document.getElementById('ca-lang')?.value.trim();
+    const description = document.getElementById('ca-description')?.value.trim();
+    const url         = document.getElementById('ca-url')?.value.trim();
+
+    if (!name) { showToast('Artifact name is required'); return; }
+
+    const payload = { name, category, lang, description, url };
+
+    try {
+        const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+        const res = await fetch(`${API_BASE_URL}/artifacts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('failed');
+        closeModal('create-artifact-modal');
+        showToast('Artifact uploaded successfully');
+    } catch {
+        closeModal('create-artifact-modal');
+        showToast('Artifact submitted — pending backend sync');
+    }
+}

@@ -5,9 +5,14 @@
   <main class="max-w-7xl mx-auto px-6 md:px-8 py-20">
 
     <div class="mb-20">
-        <div class="border-l-4 border-tertiary pl-8 mb-4">
-            <p class="text-tertiary font-mono text-xs tracking-widest uppercase mb-2">Club Repository</p>
-            <h1 class="text-5xl font-headline font-bold text-white">Artifacts</h1>
+        <div class="flex items-end justify-between mb-4">
+            <div class="border-l-4 border-tertiary pl-8">
+                <p class="text-tertiary font-mono text-xs tracking-widest uppercase mb-2">Club Repository</p>
+                <h1 class="text-5xl font-headline font-bold text-white">Artifacts</h1>
+            </div>
+            <button id="create-artifact-btn" onclick="openCreateArtifactModal()" class="hidden items-center gap-2 bg-primary text-black font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 hover:brightness-110 transition-all neon-glow-primary">
+                <span class="material-symbols-outlined text-[16px]">add</span> New Artifact
+            </button>
         </div>
         <p class="text-gray-400 text-sm pl-8 mb-12 max-w-2xl">Tools, scripts, templates, and resources built by CyberTitans members — open for the club to use, fork, and improve.</p>
 

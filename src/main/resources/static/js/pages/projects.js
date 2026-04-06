@@ -173,6 +173,57 @@ async function submitCreateProject() {
     }
 }
 
+function _renderProjectModal(p, body) {
+    const st = _projectStatusTag(p.status);
+    const techTags = (p.techStack || []).map(t =>
+        `<span class="tag-secondary pf-skill-tag">${t}</span>`
+    ).join('');
+    const contributions = p.contributions || p.members || [];
+    const rows = contributions.map(c => {
+        const tasksCompleted = c.tasksCompleted ?? c.completedTasks ?? 0;
+        const totalTasks     = c.totalTasks ?? 0;
+        const pct = totalTasks ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+        const name = c.memberName ?? c.name ?? '?';
+        return `
+            <div class="bg-[#111] border border-white/5 p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-[#1a1a1a] border border-white/10 flex items-center justify-center font-headline font-bold text-primary text-sm">${name.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <p class="text-white font-bold text-sm">${name}</p>
+                            <p class="font-mono text-[10px] text-gray-500 uppercase">${c.role || ''}</p>
+                        </div>
+                    </div>
+                    <span class="font-mono text-xs text-primary">${tasksCompleted} / ${totalTasks} tasks</span>
+                </div>
+                <div class="skill-bar">
+                    <div class="skill-bar-fill verified" style="width:0%" data-w="${pct}"></div>
+                </div>
+            </div>`;
+    }).join('');
+    body.innerHTML = `
+        <div class="flex items-start justify-between mb-3">
+            <h3 class="font-headline text-2xl font-bold text-white">${p.name}</h3>
+            <span class="${st.cls} pf-skill-tag ml-4 shrink-0">${st.label}</span>
+        </div>
+        <p class="font-mono text-xs text-gray-500 mb-4 leading-relaxed">${p.description || ''}</p>
+        <div class="flex flex-wrap gap-2 mb-6">${techTags}</div>
+        <div class="mb-5">
+            <div class="flex justify-between font-mono text-[10px] mb-1 text-gray-500">
+                <span>OVERALL PROGRESS</span><span>${p.completedTasks || 0} / ${p.totalTasks || 0} tasks</span>
+            </div>
+            <div class="skill-bar">
+                <div class="skill-bar-fill verified" style="width:0%" data-w="${p.totalTasks ? Math.round((p.completedTasks / p.totalTasks) * 100) : 0}"></div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+            <div class="w-3 h-3 bg-primary"></div>
+            <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Member Contributions</span>
+        </div>
+        <div class="space-y-3">${rows || '<p class="font-mono text-xs text-gray-500 text-center py-4">No contribution data yet.</p>'}</div>`;
+    _animateProgressBars(body);
+}
+
 async function openProjectModal(id) {
     openModal('project-analytics-modal');
     const body = document.getElementById('project-analytics-body');
@@ -181,43 +232,13 @@ async function openProjectModal(id) {
         const response = await fetch(`${API_BASE_URL}/projects/${id}`);
         if (!response.ok) throw new Error('not found');
         const p = await response.json();
-        const st = _projectStatusTag(p.status);
-        const techTags = (p.techStack || []).map(t =>
-            `<span class="tag-secondary pf-skill-tag">${t}</span>`
-        ).join('');
-        const rows = (p.contributions || []).map(c => {
-            const pct = c.totalTasks ? Math.round((c.tasksCompleted / c.totalTasks) * 100) : 0;
-            return `
-                <div class="bg-[#111] border border-white/5 p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-[#1a1a1a] border border-white/10 flex items-center justify-center font-headline font-bold text-primary text-sm">${c.memberName.charAt(0).toUpperCase()}</div>
-                            <div>
-                                <p class="text-white font-bold text-sm">${c.memberName}</p>
-                                <p class="font-mono text-[10px] text-gray-500 uppercase">${c.role}</p>
-                            </div>
-                        </div>
-                        <span class="font-mono text-xs text-primary">${c.tasksCompleted} / ${c.totalTasks} tasks</span>
-                    </div>
-                    <div class="skill-bar">
-                        <div class="skill-bar-fill verified" style="width:0%" data-w="${pct}"></div>
-                    </div>
-                </div>`;
-        }).join('');
-        body.innerHTML = `
-            <div class="flex items-start justify-between mb-3">
-                <h3 class="font-headline text-2xl font-bold text-white">${p.name}</h3>
-                <span class="${st.cls} pf-skill-tag ml-4 shrink-0">${st.label}</span>
-            </div>
-            <p class="font-mono text-xs text-gray-500 mb-4 leading-relaxed">${p.description || ''}</p>
-            <div class="flex flex-wrap gap-2 mb-6">${techTags}</div>
-            <div class="flex items-center gap-2 mb-3">
-                <div class="w-3 h-3 bg-primary"></div>
-                <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Member Contributions</span>
-            </div>
-            <div class="space-y-3">${rows || '<p class="font-mono text-xs text-gray-500 text-center py-4">No contribution data yet.</p>'}</div>`;
-        _animateProgressBars(body);
+        _renderProjectModal(p, body);
     } catch {
-        body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
+        const fallback = STATIC_PROJECTS.find(p => p.id === id);
+        if (fallback) {
+            _renderProjectModal(fallback, body);
+        } else {
+            body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
+        }
     }
 }
