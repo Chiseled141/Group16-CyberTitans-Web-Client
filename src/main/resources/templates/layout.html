@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title layout:title-pattern="$CONTENT_TITLE — CyberTitans">CyberTitans — The Digital Vault</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: { extend: { colors: { "primary": "#8eff71", "primary-dim": "#2be800", "tertiary": "#d575ff", "secondary": "#bad3fc", "outline-variant": "#484847", "surface": "#0e0e0e", "surface-container-lowest": "#000000", "surface-container-low": "#131313", "surface-container": "#1a1a1a", "surface-container-high": "#20201f", "surface-container-highest": "#262626", "on-surface": "#ffffff", "on-surface-variant": "#adaaaa", "error": "#ff7351", "gold": "#D4AF37" }, fontFamily: { "headline": ["Space Grotesk"], "body": ["Inter"], "mono": ["JetBrains Mono"] } } }
+    }
+  </script>
+  <link th:href="@{/css/main.css}" rel="stylesheet"/>
+</head>
+<body class="bg-[#0e0e0e] text-on-surface font-body selection:bg-primary selection:text-[#0d6100] overflow-x-hidden">
+
+  <div th:replace="~{components/navbar :: navbar}"></div>
+  <div th:replace="~{components/modals :: modals}"></div>
+
+  <!-- Page content will be inserted here by child templates -->
+  <div layout:fragment="content"></div>
+
+  <div th:replace="~{components/footer :: footer}"></div>
+
+  <script th:src="@{/js/utils/config.js(v=3)}"></script>
+  <script th:src="@{/js/utils/utils.js(v=3)}"></script>
+  <script th:src="@{/js/auth/auth.js(v=3)}"></script>
+  <script th:src="@{/js/core/economy.js(v=3)}"></script>
+  <script th:src="@{/js/core/public-data.js(v=3)}"></script>
+  <script th:src="@{/js/pages/projects.js(v=3)}"></script>
+  <script th:src="@{/js/pages/ranking.js(v=3)}"></script>
+  <script th:src="@{/js/pages/announcements.js(v=3)}"></script>
+  <script th:src="@{/js/pages/events.js(v=3)}"></script>
+  <script th:src="@{/js/pages/mentors.js(v=3)}"></script>
+  <script th:src="@{/js/pages/faq.js(v=3)}"></script>
+  <script th:src="@{/js/user/profile.js(v=3)}"></script>
+  <script th:src="@{/js/core/main.js(v=3)}"></script>
+  <script th:src="@{/js/auth/ChangePassword.js(v=3)}"></script>
+  <script th:src="@{/js/auth/singin.js(v=3)}"></script>
+  <script th:src="@{/js/user/mentor-hub.js(v=3)}"></script>
+</body>
+</html>
