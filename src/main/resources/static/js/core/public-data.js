@@ -203,9 +203,9 @@ async function buildTeam() {
     }
 }
 
-// ─── PUBLICATIONS FILTER ──────────────────────────────────────────────────────
+// ─── PUBLICATIONS ─────────────────────────────────────────────────────────────
 
-function filterPublications(category, btn) {
+function filterPublications(type, btn) {
     document.querySelectorAll('#pub-filter-bar button').forEach(b => {
         b.classList.remove('text-primary', 'border-primary');
         b.classList.add('text-gray-500', 'border-transparent');
@@ -213,58 +213,61 @@ function filterPublications(category, btn) {
     btn.classList.remove('text-gray-500', 'border-transparent');
     btn.classList.add('text-primary', 'border-primary');
 
-    document.querySelectorAll('#publications-grid [data-category]').forEach(card => {
-        card.style.display = (category === 'ALL' || card.dataset.category === category) ? '' : 'none';
+    document.querySelectorAll('#publications-grid [data-type]').forEach(card => {
+        card.style.display = (type === 'ALL' || card.dataset.type === type) ? '' : 'none';
     });
 }
 
-function buildPublications() {
-    initArtifactsPage();
-}
-
-function initArtifactsPage() {
-    const btn = document.getElementById('create-artifact-btn');
-    if (!btn) return;
-    if (isLoggedIn) btn.classList.replace('hidden', 'flex');
-    else btn.classList.replace('flex', 'hidden');
-}
-
-function openCreateArtifactModal() {
-    ['ca-name', 'ca-lang', 'ca-description', 'ca-url'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    const cat = document.getElementById('ca-category');
-    if (cat) cat.value = 'TOOL';
-    openModal('create-artifact-modal');
-}
-
-async function submitCreateArtifact() {
-    const name        = document.getElementById('ca-name')?.value.trim();
-    const category    = document.getElementById('ca-category')?.value;
-    const lang        = document.getElementById('ca-lang')?.value.trim();
-    const description = document.getElementById('ca-description')?.value.trim();
-    const url         = document.getElementById('ca-url')?.value.trim();
-
-    if (!name) { showToast('Artifact name is required'); return; }
-
-    const payload = { name, category, lang, description, url };
+async function buildPublications() {
+    const grid    = document.getElementById('publications-grid');
+    const filterBar = document.getElementById('pub-filter-bar');
+    if (!grid) return;
 
     try {
-        const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
-        const res = await fetch(`${API_BASE_URL}/artifacts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) throw new Error('failed');
-        closeModal('create-artifact-modal');
-        showToast('Artifact uploaded successfully');
-    } catch {
-        closeModal('create-artifact-modal');
-        showToast('Artifact submitted — pending backend sync');
+        const res  = await fetch(`${API_BASE_URL}/publications`);
+        const pubs = await res.json();
+
+        // Build dynamic filter buttons from types present in data
+        if (filterBar) {
+            const types = [...new Set(pubs.map(p => p.typeName))];
+            filterBar.innerHTML = `
+                <button onclick="filterPublications('ALL', this)" class="text-primary font-mono text-xs uppercase tracking-widest border-b-2 border-primary pb-2 transition-all">ALL</button>
+                ${types.map(t => `
+                <button onclick="filterPublications('${t}', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">${t}</button>
+                `).join('')}`;
+        }
+
+        grid.innerHTML = pubs.map(p => {
+            const venue = p.journal || p.publisher || p.school || p.institution || '';
+            const abstractShort = (p.abstractText || '').replace(/\s+/g, ' ').substring(0, 200).trim();
+            const abstract = abstractShort.length < (p.abstractText || '').length ? abstractShort + '…' : abstractShort;
+
+            return `
+            <div data-type="${p.typeName}" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
+                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-primary font-mono text-[10px] tracking-widest uppercase border border-primary/20 px-2 py-0.5 bg-primary/5">${p.typeName}</span>
+                    <span class="text-gray-600 font-mono text-[10px]">${p.year}</span>
+                </div>
+                <h3 class="text-white text-sm font-bold font-mono group-hover:text-primary transition-colors mb-2 leading-snug">${p.title}</h3>
+                <p class="text-primary/70 font-mono text-[10px] mb-3">${p.authors}</p>
+                ${venue ? `<p class="text-gray-500 font-mono text-[10px] italic mb-4">${venue}</p>` : ''}
+                <p class="text-gray-400 text-xs mb-6 flex-grow leading-relaxed">${abstract}</p>
+                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
+                    <div class="flex items-center gap-2 text-gray-600 font-mono text-[10px]">
+                        ${p.volume ? `<span>Vol. ${p.volume}</span>` : ''}
+                        ${p.pages  ? `<span>pp. ${p.pages}</span>`  : ''}
+                    </div>
+                    ${p.url ? `
+                    <a href="${p.url}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 bg-primary text-black font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 hover:brightness-110 transition-all">
+                        <i class="fas fa-external-link-alt"></i> VIEW
+                    </a>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error('Publications error:', err);
     }
 }

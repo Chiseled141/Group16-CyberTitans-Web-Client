@@ -1,7 +1,9 @@
 package com.Se2.CyberWebApp.controller;
 
+import com.Se2.CyberWebApp.entity.Education;
 import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.entity.UserExperience;
+import com.Se2.CyberWebApp.repository.EducationRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
 import com.Se2.CyberWebApp.repository.UserExperienceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ public class TeamController {
 
     @Autowired
     private UserExperienceRepository experienceRepository;
+
+    @Autowired
+    private EducationRepository educationRepository;
 
     // --- API 1: Take list of all Mem ---
     @GetMapping("/members")
@@ -138,6 +143,30 @@ public class TeamController {
 
         return ResponseEntity.ok(response);
     }
+    // --- API: Education for a member ---
+    @GetMapping("/members/{id}/education")
+    public ResponseEntity<?> getMemberEducation(@PathVariable Integer id) {
+        List<Education> edu = educationRepository.findByUserIdAndStatusOrderByStartYearDesc(id, (short) 1);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Education e : edu) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id",                 e.getId());
+            m.put("institution",        e.getInstitution());
+            m.put("institutionLogo",    e.getInstitutionLogo());
+            m.put("institutionWebsite", e.getInstitutionWebsite());
+            m.put("specialization",     e.getSpecialization());
+            m.put("title",              e.getTitle());
+            m.put("studyMode",          e.getStudyMode());
+            m.put("thesisTitle",        e.getThesisTitle());
+            m.put("thesisUrl",          e.getThesisUrl());
+            m.put("startYear",          e.getStartYear());
+            m.put("endYear",            e.getEndYear());
+            m.put("gpa",                e.getGpa());
+            result.add(m);
+        }
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/members/{id}")
     public ResponseEntity<?> deleteMember(@PathVariable Integer id) {
         // 1. Tìm user

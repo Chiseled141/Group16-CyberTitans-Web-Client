@@ -4,22 +4,31 @@
 // UC018 Guide Project Members
 // UC019 View Assigned Mentees
 
-function _getRequests() {
-    try { return JSON.parse(localStorage.getItem('mentorship_requests') || '[]'); } catch { return []; }
+let _cachedRequests = null;
+
+async function _fetchRequests() {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!token) return [];
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/requests`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return [];
+        _cachedRequests = await res.json();
+        return _cachedRequests;
+    } catch { return []; }
 }
-function _saveRequests(arr) {
-    localStorage.setItem('mentorship_requests', JSON.stringify(arr));
-}
+
 function _getGuidance() {
     try { return JSON.parse(localStorage.getItem('mentor_guidance') || '[]'); } catch { return []; }
 }
 
-function buildMentorHub() {
-    _updateInboxBadge();
+async function buildMentorHub() {
+    await _updateInboxBadge();
     showMentorHubTab('inbox');
 }
 
-function showMentorHubTab(tab) {
+async function showMentorHubTab(tab) {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
     if (!savedUserStr) return;
     const currentUser = JSON.parse(savedUserStr);
@@ -39,7 +48,7 @@ function showMentorHubTab(tab) {
     const content = document.getElementById('mentor-hub-content');
     if (!content) return;
 
-    const requests = _getRequests();
+    const requests = _cachedRequests || await _fetchRequests();
     const mine = requests.filter(r => r.mentorId === currentUser.id);
 
     if (tab === 'inbox') {
@@ -148,26 +157,36 @@ function showMentorHubTab(tab) {
     }
 }
 
-function approveRequest(reqId) {
-    const requests = _getRequests();
-    const req = requests.find(r => r.id === reqId);
-    if (!req) return;
-    req.status = 'ACCEPTED';
-    _saveRequests(requests);
-    showToast(`${req.menteeName} accepted as mentee!`, 'success');
-    _updateInboxBadge();
-    showMentorHubTab('inbox');
+async function approveRequest(reqId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/requests/${reqId}/accept`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const req = (_cachedRequests || []).find(r => r.id === reqId);
+        const name = req ? req.menteeName : 'Mentee';
+        _cachedRequests = null;
+        showToast(`${name} accepted as mentee!`, 'success');
+        await _updateInboxBadge();
+        showMentorHubTab('inbox');
+    } catch { showToast('Failed to accept request', 'error'); }
 }
 
-function declineRequest(reqId) {
-    const requests = _getRequests();
-    const req = requests.find(r => r.id === reqId);
-    if (!req) return;
-    req.status = 'DECLINED';
-    _saveRequests(requests);
-    showToast(`Request from ${req.menteeName} declined.`, 'success');
-    _updateInboxBadge();
-    showMentorHubTab('inbox');
+async function declineRequest(reqId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        await fetch(`${API_BASE_URL}/mentor/requests/${reqId}/decline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const req = (_cachedRequests || []).find(r => r.id === reqId);
+        const name = req ? req.menteeName : 'Mentee';
+        _cachedRequests = null;
+        showToast(`Request from ${name} declined.`, 'success');
+        await _updateInboxBadge();
+        showMentorHubTab('inbox');
+    } catch { showToast('Failed to decline request', 'error'); }
 }
 
 function openGuideForm(menteeId, menteeName) {
@@ -206,11 +225,9 @@ function submitGuidance() {
     showMentorHubTab('guide');
 }
 
-function _updateInboxBadge() {
-    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    if (!savedUserStr) return;
-    const currentUser = JSON.parse(savedUserStr);
-    const count = _getRequests().filter(r => r.mentorId === currentUser.id && r.status === 'PENDING').length;
+async function _updateInboxBadge() {
+    const requests = await _fetchRequests();
+    const count = requests.filter(r => r.status === 'PENDING').length;
     const badge = document.getElementById('mentor-inbox-badge');
     if (!badge) return;
     badge.textContent = count;

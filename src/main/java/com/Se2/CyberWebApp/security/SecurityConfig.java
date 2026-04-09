@@ -56,6 +56,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/ranking").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ranking/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/team/members").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/publications").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/policies").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/projects").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/projects/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/mentor/requests").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/mentor/requests/**").authenticated()
                         // ADMIN only
                         .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "SUPER ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/team/members/**").hasAnyAuthority("ADMIN", "SUPER ADMIN")

@@ -8,157 +8,16 @@
         <div class="flex items-end justify-between mb-4">
             <div class="border-l-4 border-tertiary pl-8">
                 <p class="text-tertiary font-mono text-xs tracking-widest uppercase mb-2">Club Repository</p>
-                <h1 class="text-5xl font-headline font-bold text-white">Artifacts</h1>
+                <h1 class="text-5xl font-headline font-bold text-white">Publications</h1>
             </div>
-            <button id="create-artifact-btn" onclick="openCreateArtifactModal()" class="hidden items-center gap-2 bg-primary text-black font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 hover:brightness-110 transition-all neon-glow-primary">
-                <span class="material-symbols-outlined text-[16px]">add</span> New Artifact
-            </button>
         </div>
-        <p class="text-gray-400 text-sm pl-8 mb-12 max-w-2xl">Tools, scripts, templates, and resources built by CyberTitans members — open for the club to use, fork, and improve.</p>
+        <p class="text-gray-400 text-sm pl-8 mb-12 max-w-2xl">Research papers, theses, and academic works by CyberTitans members and advisors.</p>
 
         <div class="flex flex-wrap gap-4 mt-8 mb-12 border-b border-white/10 pb-4" id="pub-filter-bar">
             <button onclick="filterPublications('ALL', this)" class="text-primary font-mono text-xs uppercase tracking-widest border-b-2 border-primary pb-2 transition-all">ALL</button>
-            <button onclick="filterPublications('TOOL', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">TOOL</button>
-            <button onclick="filterPublications('SCRIPT', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">SCRIPT</button>
-            <button onclick="filterPublications('TEMPLATE', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">TEMPLATE</button>
-            <button onclick="filterPublications('WORDLIST', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">WORDLIST</button>
-            <button onclick="filterPublications('CONFIG', this)" class="text-gray-500 hover:text-white font-mono text-xs uppercase tracking-widest border-b-2 border-transparent hover:border-white/30 pb-2 transition-all">CONFIG</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="publications-grid">
-
-            <div data-category="TOOL" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-primary font-mono text-[10px] tracking-widest uppercase border border-primary/20 px-2 py-0.5 bg-primary/5">TOOL</span>
-                    <span class="text-gray-600 font-mono text-[10px]">Python 3</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-primary text-base">terminal</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">ct-recon.py</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">Automated recon script — runs nmap, gobuster, and whatweb in sequence and outputs a structured report. Built for CTF initial foothold phases.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 14</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-code-branch"></i> 4</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fab fa-github"></i> VIEW
-                    </a>
-                </div>
-            </div>
-
-            <div data-category="SCRIPT" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-blue-400 font-mono text-[10px] tracking-widest uppercase border border-blue-400/20 px-2 py-0.5 bg-blue-400/5">SCRIPT</span>
-                    <span class="text-gray-600 font-mono text-[10px]">Bash</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-blue-400 text-base">code</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">setup-kali.sh</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">One-shot Kali Linux setup script — installs club tools, configures tmux, sets aliases, and clones all CyberTitans repos. Gets you operational in under 5 minutes.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 22</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-code-branch"></i> 7</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fab fa-github"></i> VIEW
-                    </a>
-                </div>
-            </div>
-
-            <div data-category="WORDLIST" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-yellow-400 font-mono text-[10px] tracking-widest uppercase border border-yellow-400/20 px-2 py-0.5 bg-yellow-400/5">WORDLIST</span>
-                    <span class="text-gray-600 font-mono text-[10px]">TXT · 2.1MB</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-yellow-400 text-base">list_alt</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">vn-ctf-passwords.txt</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">Vietnamese-context password wordlist curated from past CTF challenges. Includes common Vietnamese names, dates, and leetspeak variants — outperforms rockyou on local targets.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 38</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-download"></i> 91</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fas fa-download"></i> GET
-                    </a>
-                </div>
-            </div>
-
-            <div data-category="TEMPLATE" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-purple-400 font-mono text-[10px] tracking-widest uppercase border border-purple-400/20 px-2 py-0.5 bg-purple-400/5">TEMPLATE</span>
-                    <span class="text-gray-600 font-mono text-[10px]">LaTeX</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-purple-400 text-base">description</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">ctf-writeup.tex</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">Club-standard LaTeX template for CTF write-ups. Includes sections for challenge info, recon, exploitation steps, and flag capture. Used in all official CyberTitans submissions.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 11</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-code-branch"></i> 2</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fab fa-github"></i> VIEW
-                    </a>
-                </div>
-            </div>
-
-            <div data-category="CONFIG" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-pink-400 font-mono text-[10px] tracking-widest uppercase border border-pink-400/20 px-2 py-0.5 bg-pink-400/5">CONFIG</span>
-                    <span class="text-gray-600 font-mono text-[10px]">YAML / TOML</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-pink-400 text-base">settings</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">burp-extensions.json</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">Curated Burp Suite extension config used by club members — includes Autorize, Turbo Intruder, and custom match-replace rules for Vietnamese web app testing.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 19</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-download"></i> 44</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fas fa-download"></i> GET
-                    </a>
-                </div>
-            </div>
-
-            <div data-category="TOOL" class="group bg-[#0a0a0a] border border-white/10 p-6 relative overflow-hidden hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
-                <div class="absolute top-0 left-[-100%] w-full h-[2px] bg-primary group-hover:left-0 transition-all duration-500"></div>
-                <div class="flex justify-between items-center mb-5">
-                    <span class="text-primary font-mono text-[10px] tracking-widest uppercase border border-primary/20 px-2 py-0.5 bg-primary/5">TOOL</span>
-                    <span class="text-gray-600 font-mono text-[10px]">Go</span>
-                </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-primary text-base">radar</span>
-                    <h3 class="text-white text-base font-bold font-mono group-hover:text-primary transition-colors">ct-subdomain-enum</h3>
-                </div>
-                <p class="text-gray-400 text-sm mb-6 flex-grow">Fast subdomain enumerator written in Go. Supports DNS bruteforce, certificate transparency log queries, and passive sources. Outputs JSON for pipeline integration.</p>
-                <div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
-                    <div class="flex items-center gap-3 text-gray-500 font-mono text-[10px]">
-                        <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500/70"></i> 31</span>
-                        <span class="flex items-center gap-1"><i class="fas fa-code-branch"></i> 9</span>
-                    </div>
-                    <a href="#" class="text-primary font-mono text-[10px] uppercase tracking-widest flex items-center gap-1 hover:brightness-125 transition-all">
-                        <i class="fab fa-github"></i> VIEW
-                    </a>
-                </div>
-            </div>
-
         </div>
     </div>
     <div class="border-t border-white/10 pt-20 mt-10">

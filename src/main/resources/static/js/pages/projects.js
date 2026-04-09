@@ -115,12 +115,15 @@ async function buildProjects() {
         const response = await fetch(`${API_BASE_URL}/projects`);
         if (!response.ok) throw new Error('fetch failed');
         const projects = await response.json();
-        const data = projects.length ? projects : STATIC_PROJECTS;
-        container.innerHTML = data.map(p => _buildProjectCard(p)).join('');
+        if (!projects.length) {
+            container.innerHTML = `<div class="col-span-full text-center font-mono text-gray-500 text-xs uppercase tracking-widest py-20">[ No projects found ]</div>`;
+            return;
+        }
+        container.innerHTML = projects.map(p => _buildProjectCard(p)).join('');
         _animateProgressBars(container);
-    } catch {
-        container.innerHTML = STATIC_PROJECTS.map(p => _buildProjectCard(p)).join('');
-        _animateProgressBars(container);
+    } catch (err) {
+        console.error('Projects error:', err);
+        container.innerHTML = `<div class="col-span-full text-center font-mono text-gray-500 text-xs uppercase tracking-widest py-20">[ Failed to load projects ]</div>`;
     }
 }
 
@@ -234,11 +237,6 @@ async function openProjectModal(id) {
         const p = await response.json();
         _renderProjectModal(p, body);
     } catch {
-        const fallback = STATIC_PROJECTS.find(p => p.id === id);
-        if (fallback) {
-            _renderProjectModal(fallback, body);
-        } else {
-            body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
-        }
+        body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
     }
 }
