@@ -218,10 +218,63 @@ function filterPublications(type, btn) {
     });
 }
 
+function openCreatePublicationModal() {
+    ['cp-pub-title','cp-pub-authors','cp-pub-journal','cp-pub-abstract','cp-pub-keywords','cp-pub-url'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const yearEl = document.getElementById('cp-pub-year');
+    if (yearEl) yearEl.value = new Date().getFullYear();
+    const typeEl = document.getElementById('cp-pub-type');
+    if (typeEl) typeEl.value = '1';
+    openModal('create-publication-modal');
+}
+
+async function submitCreatePublication() {
+    const title    = document.getElementById('cp-pub-title')?.value.trim();
+    const authors  = document.getElementById('cp-pub-authors')?.value.trim();
+    const type     = document.getElementById('cp-pub-type')?.value;
+    const year     = document.getElementById('cp-pub-year')?.value;
+    const journal  = document.getElementById('cp-pub-journal')?.value.trim();
+    const abstract = document.getElementById('cp-pub-abstract')?.value.trim();
+    const keyword  = document.getElementById('cp-pub-keywords')?.value.trim();
+    const url      = document.getElementById('cp-pub-url')?.value.trim();
+
+    if (!title) { showToast('Title is required', 'error'); return; }
+    if (!authors) { showToast('Authors are required', 'error'); return; }
+
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    const payload = { title, authors, type, year: parseInt(year) || new Date().getFullYear(), journal, abstractText: abstract, keyword, url };
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/publications`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        closeModal('create-publication-modal');
+        if (res.ok) {
+            showToast('Publication submitted!', 'success');
+            buildPublications();
+            await _addCoinsToSelf(50, 'publication');
+        } else {
+            showToast('Submission failed', 'error');
+        }
+    } catch {
+        showToast('Connection failed', 'error');
+    }
+}
+
 async function buildPublications() {
     const grid    = document.getElementById('publications-grid');
     const filterBar = document.getElementById('pub-filter-bar');
     if (!grid) return;
+
+    const btn = document.getElementById('create-publication-btn');
+    if (btn) {
+        if (isLoggedIn) btn.classList.replace('hidden', 'flex');
+        else btn.classList.replace('flex', 'hidden');
+    }
 
     try {
         const res  = await fetch(`${API_BASE_URL}/publications`);

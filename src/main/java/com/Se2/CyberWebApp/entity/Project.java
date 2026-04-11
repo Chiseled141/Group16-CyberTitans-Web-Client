@@ -95,4 +95,26 @@ public class Project {
     public Short getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+    // Setters
+    public void setName(String name) { this.name = name; }
+    public void setSlug(String slug) { this.slug = slug; }
+    public void setDescription(String description) { this.description = description; }
+    public void setImage(String image) { this.image = image; }
+    public void setTechnologies(String technologies) { this.technologies = technologies; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public void setCoinPrice(int coinPrice) { this.coinPrice = coinPrice; }
+    public void setCurrencyUnit(String currencyUnit) { this.currencyUnit = currencyUnit; }
+    public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
+    public void setViews(int views) { this.views = views; }
+    public void setRatingAvg(BigDecimal ratingAvg) { this.ratingAvg = ratingAvg; }
+    public void setRatingCount(int ratingCount) { this.ratingCount = ratingCount; }
+    public void setDemoUrl(String demoUrl) { this.demoUrl = demoUrl; }
+    public void setDownloadCount(int downloadCount) { this.downloadCount = downloadCount; }
+    public void setTeamId(String teamId) { this.teamId = teamId; }
+    public void setPublishedAt(String publishedAt) { this.publishedAt = publishedAt; }
+    public void setUserId(Integer userId) { this.userId = userId; }
+    public void setStatus(short status) { this.status = status; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -197,6 +197,7 @@ async function openProfileModal(id) {
         
         // --- LOGIC PHÂN QUYỀN HIỂN THỊ NÚT BẤM ---
         const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+        if (!savedUserStr) { logout(); return; }
         const currentUser = JSON.parse(savedUserStr);
         const viewerRole = currentUser.role;
 
@@ -211,18 +212,19 @@ async function openProfileModal(id) {
         }
         // KỊCH BẢN 2: Xem Profile của người khác
         else {
-            const pendingReq = getMyPendingRequest(user.id);
+            const pendingReq = await getMyPendingRequest(user.id);
             if (pendingReq) {
                 actionButtonsHTML = `
                     <div class="w-full bg-yellow-500/10 border border-yellow-500/30 p-3 mb-3 text-center font-mono text-[10px] text-yellow-400 uppercase tracking-widest">
-                        ● Request pending since ${new Date(pendingReq.timestamp).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+                        ● Request pending since ${new Date(pendingReq.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
                     </div>
                     <button onclick="cancelMentorRequest(${user.id})" class="w-full bg-red-600/20 border border-red-500/50 text-red-400 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px] mb-2">
                         CANCEL REQUEST
                     </button>`;
             } else {
+                const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 actionButtonsHTML = `
-                    <button onclick="handleMentorRequest(${user.id}, '${user.name}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
+                    <button onclick="handleMentorRequest(${user.id}, '${safeName}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
                         MENTOR REQUEST (500 COINS)
                     </button>`;
             }
@@ -231,10 +233,13 @@ async function openProfileModal(id) {
                     MESSAGE
                 </button>`;
 
-            // ĐẶC QUYỀN ADMIN: Hiện thêm nút Xóa đặc vụ
+            // ĐẶC QUYỀN ADMIN: Hiện thêm nút Xóa đặc vụ và Award Coins
             if (viewerRole === 'ADMIN' || viewerRole === 'SUPER ADMIN') {
                 actionButtonsHTML += `
-                    <button onclick="adminDeleteUser(${user.id})" class="w-full mt-4 bg-red-600/20 border border-red-500/50 text-red-500 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px]">
+                    <button onclick="openAwardCoinsModal(${user.id}, '${safeName}')" class="w-full mt-4 bg-primary/10 border border-primary/30 text-primary font-bold font-mono tracking-widest py-3.5 hover:bg-primary hover:text-black transition-all text-[11px]">
+                        [ADMIN] AWARD COINS
+                    </button>
+                    <button onclick="adminDeleteUser(${user.id})" class="w-full mt-2 bg-red-600/20 border border-red-500/50 text-red-500 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px]">
                         [ADMIN] TERMINATE OPERATIVE
                     </button>`;
             }
@@ -273,6 +278,31 @@ async function openProfileModal(id) {
             }).join('');
         }
 
+        // --- FETCH EDUCATION ---
+        let educationHTML = '';
+        try {
+            const eduRes = await fetch(`${API_BASE_URL}/team/members/${id}/education`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (eduRes.ok) {
+                const eduList = await eduRes.json();
+                if (eduList.length > 0) {
+                    educationHTML = `
+                        <div class="mt-10 pt-6 border-t border-white/5">
+                            <h2 class="text-3xl font-bold text-white mb-8 pb-4 border-b border-white/10">Education</h2>
+                            <div class="space-y-6">
+                                ${eduList.map((e, i) => `
+                                    <div class="relative pl-8">
+                                        ${i < eduList.length - 1 ? '<div class="absolute left-[3px] top-4 bottom-[-24px] w-[1px] bg-white/10"></div>' : ''}
+                                        <div class="absolute left-0 top-1.5 w-2 h-2 bg-gray-500"></div>
+                                        <h3 class="text-base font-bold text-white">${e.institution}</h3>
+                                        <p class="text-gray-400 font-mono text-[10px] uppercase tracking-widest mt-1">${e.title}${e.specialization ? ' · ' + e.specialization : ''}</p>
+                                        <p class="text-gray-600 font-mono text-[10px] mt-0.5">${e.startYear} — ${e.endYear || 'Present'}${e.gpa && e.gpa > 0 ? ' · GPA: ' + e.gpa : ''}</p>
+                                    </div>`).join('')}
+                            </div>
+                        </div>`;
+                }
+            }
+        } catch {}
+
         // --- RENDER  ---
         modalBody.innerHTML = `
             <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 mt-4">
@@ -280,7 +310,7 @@ async function openProfileModal(id) {
                     <div class="p-1 border border-white/10 bg-[#111] shadow-2xl">
                         <img src="${avatarUrl}" class="w-full aspect-square object-cover grayscale" />
                     </div>
-                    
+
                     <div id="modal-actions-container">
                         ${actionButtonsHTML}
                     </div>
@@ -298,6 +328,7 @@ async function openProfileModal(id) {
                 <div>
                     <h2 class="text-3xl font-bold text-white mb-8 pb-4 border-b border-white/10">Experience</h2>
                     <div class="space-y-2">${experiencesHTML}</div>
+                    ${educationHTML}
                     <div class="mt-10 pt-6 border-t border-white/5">
                          <h4 class="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-4">Briefing Notes</h4>
                          <p class="text-gray-400 text-sm leading-relaxed font-mono">${user.description || 'No additional logs found.'}</p>

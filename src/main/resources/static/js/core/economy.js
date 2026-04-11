@@ -1,24 +1,30 @@
 async function purchaseTier(tierName, coinsAmount) {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token'); 
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
 
     if (!savedUserStr || !token) {
-        showToast('Vui lòng Đăng nhập để giao dịch!', 'error');
+        showToast('Please log in first.', 'error');
         openModal('login-modal'); return;
     }
 
     const currentUser = JSON.parse(savedUserStr);
-    if (coinsAmount === 0) return showToast(`Bạn đang ở cấp ${tierName}.`, 'success');
 
-    showToast(`Đang thiết lập kết nối...`, 'success');
-    const newCoinBalance = (currentUser.coin || 0) + coinsAmount;
-    const payload = {
-        name: currentUser.name, email: currentUser.email,
-        phone: currentUser.phone, description: currentUser.description,
-        role: tierName, coin: newCoinBalance
-    };
+    if (coinsAmount === 0) {
+        showToast(`You are already on the ${tierName} tier.`, 'success');
+        return;
+    }
+
+    const currentCoins = currentUser.coin || 0;
+    if (currentCoins < coinsAmount) {
+        showToast(`Insufficient Coins. Need ${coinsAmount.toLocaleString()}, have ${currentCoins.toLocaleString()}.`, 'error');
+        return;
+    }
+
+    const newCoinBalance = currentCoins - coinsAmount;
+    const payload = { coin: newCoinBalance };
 
     try {
+        showToast('Processing transaction...', 'success');
         const response = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -26,28 +32,35 @@ async function purchaseTier(tierName, coinsAmount) {
         });
 
         if (response.ok) {
-            currentUser.coin = newCoinBalance; currentUser.role = tierName;
+            currentUser.coin = newCoinBalance;
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
-            showToast(`GIAO DỊCH THÀNH CÔNG!`, 'success');
-            applyLoginState(currentUser); 
-        } else { showToast('Connection denied.', 'error'); }
-    } catch (error) { showToast('Connection failed.', 'error'); }
+            showToast(`✓ ${tierName} tier unlocked! −${coinsAmount.toLocaleString()} Coins.`, 'success');
+            applyLoginState(currentUser);
+        } else {
+            showToast('Transaction denied.', 'error');
+        }
+    } catch (error) {
+        showToast('Connection failed.', 'error');
+    }
 }
 
 async function handleMentorRequest(mentorId, mentorName) {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token'); 
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
 
-    if (!savedUserStr || !token) return showToast('Vui lòng Đăng nhập!', 'error');
+    if (!savedUserStr || !token) return showToast('Please log in first.', 'error');
 
     const currentUser = JSON.parse(savedUserStr);
     const MENTOR_COST = 500;
 
-    if (!currentUser.coin || currentUser.coin < MENTOR_COST) return showToast(`Không đủ ${MENTOR_COST} Coins!`, 'error');
+    if (!currentUser.coin || currentUser.coin < MENTOR_COST) {
+        showToast(`Insufficient Coins. Need ${MENTOR_COST}, have ${currentUser.coin || 0}.`, 'error');
+        return;
+    }
 
     try {
-        showToast(`Đang kết nối tới ${mentorName}...`, 'success');
+        showToast(`Connecting to ${mentorName}...`, 'success');
         const response = await fetch(`${API_BASE_URL}/team/members/${mentorId}/request-mentor`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -59,47 +72,120 @@ async function handleMentorRequest(mentorId, mentorName) {
             currentUser.coin = data.remainingCoins;
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
-
-            // Save request to localStorage so mentor sees it in their inbox
-            const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
-            requests.push({
-                id: 'req-' + Date.now(),
-                mentorId: mentorId,
-                mentorName: mentorName,
-                menteeId: currentUser.id,
-                menteeName: currentUser.name,
-                status: 'PENDING',
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('mentorship_requests', JSON.stringify(requests));
-
             applyLoginState(currentUser);
             showToast(`Request sent to ${mentorName}! −${MENTOR_COST} Coins.`, 'success');
-
-            setTimeout(() => { showToast(`[SYSTEM] ${mentorName} has received your request!`, 'success'); }, 3000);
+            // Refresh the profile modal to show pending state
+            openProfileModal(mentorId);
         } else {
             const errorData = await response.json();
-            showToast(`LỖI: ${errorData.message}`, 'error');
+            showToast(`Error: ${errorData.message}`, 'error');
         }
-    } catch (error) { showToast('Connection failed.', 'error'); }
+    } catch (error) {
+        showToast('Connection failed.', 'error');
+    }
 }
 
-// UC008 — Cancel own pending mentorship request
-function getMyPendingRequest(mentorId) {
+// UC008 — Check for pending mentorship request (DB-backed)
+async function getMyPendingRequest(mentorId) {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    if (!savedUserStr) return null;
-    const currentUser = JSON.parse(savedUserStr);
-    const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
-    return requests.find(r => r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING') || null;
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!savedUserStr || !token) return null;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/my-requests`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return null;
+        const requests = await res.json();
+        const currentUser = JSON.parse(savedUserStr);
+        return requests.find(r => r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING') || null;
+    } catch { return null; }
 }
 
-function cancelMentorRequest(mentorId) {
+// ── Admin: Award coins to any member ────────────────────────────────────────
+
+function openAwardCoinsModal(userId, userName) {
+    document.getElementById('award-coins-user-id').value = userId;
+    document.getElementById('award-coins-target-name').textContent = `Target: ${userName}`;
+    document.getElementById('award-coins-amount').value = '';
+    openModal('award-coins-modal');
+}
+
+async function submitAwardCoins() {
+    const userId = parseInt(document.getElementById('award-coins-user-id').value);
+    const amount = parseInt(document.getElementById('award-coins-amount').value);
+    if (!userId || isNaN(amount) || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!token) { showToast('Not authenticated', 'error'); return; }
+    try {
+        const res = await fetch(`${API_BASE_URL}/team/members/${userId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const member = await res.json();
+        const newBalance = (member.coin || 0) + amount;
+
+        const update = await fetch(`${API_BASE_URL}/team/members/${userId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ coin: newBalance })
+        });
+        if (!update.ok) throw new Error();
+        closeModal('award-coins-modal');
+        showToast(`+${amount} Coins awarded to ${member.name}!`, 'success');
+    } catch {
+        showToast('Failed to award coins', 'error');
+    }
+}
+
+// ── Auto-reward: add coins to the currently logged-in user ──────────────────
+
+async function _addCoinsToSelf(amount, reason) {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    if (!savedUserStr) return;
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!savedUserStr || !token) return;
     const currentUser = JSON.parse(savedUserStr);
-    const requests = JSON.parse(localStorage.getItem('mentorship_requests') || '[]');
-    const updated = requests.filter(r => !(r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING'));
-    localStorage.setItem('mentorship_requests', JSON.stringify(updated));
-    showToast('Mentorship request cancelled.', 'success');
-    openProfileModal(mentorId); // Re-render the modal to reflect new state
+    const newBalance = (currentUser.coin || 0) + amount;
+    try {
+        const res = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ coin: newBalance })
+        });
+        if (res.ok) {
+            currentUser.coin = newBalance;
+            const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+            storage.setItem('cyber_user', JSON.stringify(currentUser));
+            applyLoginState(currentUser);
+            showToast(`+${amount} Coins earned for ${reason}!`, 'success');
+        }
+    } catch { /* silent — reward is best-effort */ }
+}
+
+async function cancelMentorRequest(mentorId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/my-requests`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const requests = await res.json();
+        const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+        if (!savedUserStr) return;
+        const currentUser = JSON.parse(savedUserStr);
+        const pending = requests.find(r => r.mentorId === mentorId && r.menteeId === currentUser.id && r.status === 'PENDING');
+        if (!pending) return;
+
+        await fetch(`${API_BASE_URL}/mentor/requests/${pending.id}/cancel`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        showToast('Mentorship request cancelled.', 'success');
+        openProfileModal(mentorId);
+    } catch {
+        showToast('Failed to cancel request.', 'error');
+    }
 }

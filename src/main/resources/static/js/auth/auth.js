@@ -1,8 +1,28 @@
-function checkLoginState() {
+async function checkLoginState() {
     const sessionData = sessionStorage.getItem('cyber_user');
     const localData = localStorage.getItem('cyber_user');
     const savedUser = sessionData || localData;
-    if (savedUser) applyLoginState(JSON.parse(savedUser));
+    if (!savedUser) return;
+
+    const user = JSON.parse(savedUser);
+    applyLoginState(user); // Apply immediately with cached data
+
+    // Then fetch fresh coin balance from server
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!token) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/team/members/${user.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const fresh = await res.json();
+        if (fresh.coin !== undefined && fresh.coin !== user.coin) {
+            user.coin = fresh.coin;
+            const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+            storage.setItem('cyber_user', JSON.stringify(user));
+            applyLoginState(user);
+        }
+    } catch { /* server unavailable, keep cached value */ }
 }
 
 function applyLoginState(userData) {

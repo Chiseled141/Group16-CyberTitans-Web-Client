@@ -76,6 +76,20 @@ public class MentorshipController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    // Cancel request (mentee cancels their own, tracking=4 = cancelled)
+    @PostMapping("/requests/{id}/cancel")
+    public ResponseEntity<?> cancelRequest(@PathVariable Integer id,
+                                           @RequestHeader("Authorization") String authHeader) {
+        Integer menteeId = extractUserId(authHeader);
+        return requestRepository.findById(id).map(r -> {
+            if (!r.getMenteeId().equals(menteeId)) return ResponseEntity.status(403).<Map<String,Object>>body(Map.of("message", "Forbidden"));
+            r.setTracking(4);
+            r.setUpdatedAt(LocalDateTime.now());
+            requestRepository.save(r);
+            return ResponseEntity.ok(Map.of("message", "Request cancelled"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     private Map<String, Object> toDto(MentorshipRequest r) {
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id",          r.getId());

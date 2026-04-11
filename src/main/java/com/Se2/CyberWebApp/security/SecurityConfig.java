@@ -60,7 +60,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/policies").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/projects").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/projects/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/projects").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/publications").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/mentor/requests").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/mentor/my-requests").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/mentor/requests/**").authenticated()
                         // ADMIN only
                         .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ADMIN", "SUPER ADMIN")

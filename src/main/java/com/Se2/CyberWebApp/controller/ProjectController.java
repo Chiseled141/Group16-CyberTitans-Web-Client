@@ -4,10 +4,12 @@ import com.Se2.CyberWebApp.entity.Project;
 import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.repository.ProjectRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
+import com.Se2.CyberWebApp.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,10 +23,50 @@ public class ProjectController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @GetMapping("/projects")
     public List<Map<String, Object>> getProjects() {
         List<Project> projects = projectRepository.findByStatusOrderByCreatedAtDesc((short) 1);
         return projects.stream().map(p -> toDto(p, false)).collect(Collectors.toList());
+    }
+
+    @PostMapping("/projects")
+    public ResponseEntity<?> createProject(@RequestBody Map<String, Object> body,
+                                           @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            User creator = userRepository.findByUsername(username).orElse(null);
+            if (creator == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+            Project p = new Project();
+            p.setName(body.getOrDefault("name", "Untitled").toString());
+            p.setDescription(body.containsKey("description") ? body.get("description").toString() : "");
+            p.setTechnologies(body.containsKey("techStack") ? String.join(",", (List<String>) body.get("techStack")) : "");
+            p.setCategoryId(1);
+            p.setTeamId(creator.getId().toString());
+            p.setUserId(creator.getId());
+            p.setPrice(java.math.BigDecimal.ZERO);
+            p.setCoinPrice(0);
+            p.setCurrencyUnit("USD");
+            p.setViews(0);
+            p.setRatingAvg(java.math.BigDecimal.ZERO);
+            p.setRatingCount(0);
+            p.setDownloadCount(0);
+            p.setStatus((short) 1);
+
+            String rawName = p.getName().toLowerCase().replaceAll("[^a-z0-9]+", "-");
+            p.setSlug(rawName + "-" + System.currentTimeMillis());
+            p.setCreatedAt(LocalDateTime.now());
+            p.setUpdatedAt(LocalDateTime.now());
+
+            projectRepository.save(p);
+            return ResponseEntity.ok(Map.of("message", "Project created", "id", p.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to create project"));
+        }
     }
 
     @GetMapping("/projects/{id}")

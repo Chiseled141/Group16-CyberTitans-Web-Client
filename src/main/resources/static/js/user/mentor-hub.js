@@ -63,7 +63,7 @@ async function showMentorHubTab(tab) {
                     <div>
                         <div class="flex items-center gap-2 mb-2">
                             <span class="font-mono text-[9px] uppercase tracking-widest text-yellow-400 border border-yellow-400/30 px-2 py-0.5 bg-yellow-400/5">PENDING</span>
-                            <span class="font-mono text-[10px] text-gray-500">${new Date(r.timestamp).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</span>
+                            <span class="font-mono text-[10px] text-gray-500">${new Date(r.createdAt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</span>
                         </div>
                         <p class="text-white font-bold text-lg font-headline">${r.menteeName}</p>
                         <p class="font-mono text-xs text-gray-500 mt-0.5">Mentee ID: #${String(r.menteeId).padStart(4, '0')}</p>
@@ -93,9 +93,9 @@ async function showMentorHubTab(tab) {
                     <div>
                         <span class="font-mono text-[9px] uppercase tracking-widest text-primary border border-primary/30 px-2 py-0.5 bg-primary/5">ACTIVE</span>
                         <p class="text-white font-bold text-lg font-headline mt-2">${r.menteeName}</p>
-                        <p class="font-mono text-xs text-gray-500 mt-0.5">Since ${new Date(r.timestamp).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</p>
+                        <p class="font-mono text-xs text-gray-500 mt-0.5">Since ${new Date(r.createdAt).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'})}</p>
                     </div>
-                    <button onclick="openGuideForm('${r.menteeId}', '${r.menteeName}')"
+                    <button onclick="openGuideForm('${r.menteeId}')"
                         class="px-5 py-2.5 border border-primary/30 text-primary text-[10px] font-mono uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[14px]">edit_note</span> GUIDE
                     </button>
@@ -160,7 +160,7 @@ async function showMentorHubTab(tab) {
 async function approveRequest(reqId) {
     const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
     try {
-        const res = await fetch(`${API_BASE_URL}/mentor/requests/${reqId}/accept`, {
+        await fetch(`${API_BASE_URL}/mentor/requests/${reqId}/accept`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -189,7 +189,7 @@ async function declineRequest(reqId) {
     } catch { showToast('Failed to decline request', 'error'); }
 }
 
-function openGuideForm(menteeId, menteeName) {
+function openGuideForm(menteeId) {
     showMentorHubTab('guide');
     setTimeout(() => {
         const sel = document.getElementById('guide-mentee-select');

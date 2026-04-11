@@ -1,11 +1,14 @@
 package com.Se2.CyberWebApp.controller;
 
 import com.Se2.CyberWebApp.entity.Education;
+import com.Se2.CyberWebApp.entity.MentorshipRequest;
 import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.entity.UserExperience;
 import com.Se2.CyberWebApp.repository.EducationRepository;
+import com.Se2.CyberWebApp.repository.MentorshipRequestRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
 import com.Se2.CyberWebApp.repository.UserExperienceRepository;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +30,9 @@ public class TeamController {
 
     @Autowired
     private EducationRepository educationRepository;
+
+    @Autowired
+    private MentorshipRequestRepository mentorshipRequestRepository;
 
     // --- API 1: Take list of all Mem ---
     @GetMapping("/members")
@@ -134,8 +140,22 @@ public class TeamController {
         mentee.setCoin(mentee.getCoin() - MENTOR_COST);
         userRepository.save(mentee);
 
-        // 5. (Tương lai) Tại đây bạn sẽ lưu 1 dòng vào bảng `Notification` trong DB cho Mentor.
-        // Hiện tại, chúng ta báo giao dịch thành công về cho Frontend.
+        // 5. Persist mentorship request to DB
+        MentorshipRequest req = new MentorshipRequest();
+        req.setMenteeId(menteeId);
+        req.setTeamId(mentorId);
+        req.setTopic("Mentorship Request");
+        req.setMode("online");
+        req.setDurationMinutes(60);
+        req.setCurrencyUnit("COIN");
+        req.setOfferingFee(MENTOR_COST);
+        req.setTracking(0);
+        req.setPaymentStatus(0);
+        req.setScheduledAt(LocalDateTime.now().plusDays(7));
+        req.setStatus((short) 1);
+        req.setCreatedAt(LocalDateTime.now());
+        req.setUpdatedAt(LocalDateTime.now());
+        mentorshipRequestRepository.save(req);
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Request sent successfully!");

@@ -169,6 +169,7 @@ async function submitCreateProject() {
         closeModal('create-project-modal');
         showToast('Project created successfully');
         buildProjects();
+        await _addCoinsToSelf(30, 'project');
     } catch {
         closeModal('create-project-modal');
         showToast('Project submitted — pending backend sync');

@@ -10,6 +10,9 @@
                 <p class="text-tertiary font-mono text-xs tracking-widest uppercase mb-2">Club Repository</p>
                 <h1 class="text-5xl font-headline font-bold text-white">Publications</h1>
             </div>
+            <button id="create-publication-btn" onclick="openCreatePublicationModal()" class="hidden items-center gap-2 bg-primary text-black font-mono text-xs font-bold uppercase tracking-widest px-5 py-3 hover:brightness-110 transition-all neon-glow-primary">
+                <span class="material-symbols-outlined text-[16px]">add</span> New Publication
+            </button>
         </div>
         <p class="text-gray-400 text-sm pl-8 mb-12 max-w-2xl">Research papers, theses, and academic works by CyberTitans members and advisors.</p>
 
@@ -18,88 +21,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="publications-grid">
-        </div>
-    </div>
-    <div class="border-t border-white/10 pt-20 mt-10">
-        <div class="flex items-center gap-3 mb-10">
-            <div class="w-2.5 h-2.5 bg-primary"></div>
-            <h2 class="font-headline text-3xl font-bold uppercase tracking-widest text-white">Membership Tiers</h2>
-        </div>
-
-        <p class="text-on-surface-variant mb-12 max-w-2xl text-sm leading-relaxed">
-            Nâng cấp cấp bậc đặc vụ hoặc nạp Cyber Coins để mở khóa các tài liệu mật, phòng Lab thực hành, và sử dụng Coin để gửi yêu cầu thuê Mentor 1-1 hỗ trợ trực tiếp.
-        </p>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            <div class="border border-white/10 bg-[#0a0a0a] p-8 flex flex-col hover:border-white/30 transition-all">
-                <div class="text-gray-400 font-mono text-[11px] tracking-[0.2em] uppercase mb-4">Recruit</div>
-                <div class="flex items-baseline gap-2 mb-3">
-                    <span class="text-4xl font-bold text-white">Free</span>
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-8 h-16">
-                    Dành cho sinh viên và những người mới bắt đầu bước chân vào lĩnh vực an ninh mạng.
-                </p>
-
-                <div class="space-y-4 mb-10 flex-grow">
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-primary"></div><span class="text-white text-sm">Public project access</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-primary"></div><span class="text-white text-sm">Community forum</span></div>
-                    <div class="flex items-center gap-3 opacity-40"><div class="w-1.5 h-1.5 bg-gray-600"></div><span class="text-gray-400 text-sm">Private repositories</span></div>
-                    <div class="flex items-center gap-3 opacity-40"><div class="w-1.5 h-1.5 bg-gray-600"></div><span class="text-gray-400 text-sm">Mentorship program (Need Coins)</span></div>
-                </div>
-
-                <button onclick="purchaseTier('RECRUIT', 0)" class="w-full py-4 border border-white/10 text-white font-bold font-mono text-xs tracking-widest uppercase hover:bg-white/5 transition-all">
-                    Join Free
-                </button>
-            </div>
-
-            <div class="border border-primary bg-[#0a0a0a] p-8 flex flex-col relative transform md:-translate-y-2 shadow-[0_0_30px_rgba(163,230,53,0.05)]">
-                <div class="absolute top-4 right-4 bg-primary text-black text-[9px] font-bold px-2 py-1 uppercase tracking-widest">Recommended</div>
-                <div class="text-primary font-mono text-[11px] tracking-[0.2em] uppercase mb-4">Operative</div>
-
-                <div class="flex items-baseline gap-2 mb-3">
-                    <span class="text-4xl font-bold text-white">1,000</span>
-                    <span class="text-gray-500 font-mono text-sm">COINS</span>
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-8 h-16">
-                    Earn 1000 Cyber Coins to unlock exclusive write-ups, private repos, and request 1-on-1 mentorship sessions with our elite Operatives.
-                </p>
-
-                <div class="space-y-4 mb-10 flex-grow">
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-primary"></div><span class="text-white text-sm">All Recruit features</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-primary"></div><span class="text-white text-sm">Private repositories</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-primary"></div><span class="text-white text-sm">CTF practice labs</span></div>
-                    <div class="flex items-center gap-3 opacity-40"><div class="w-1.5 h-1.5 bg-gray-600"></div><span class="text-gray-400 text-sm">Gold advisory access</span></div>
-                </div>
-
-                <button onclick="purchaseTier('OPERATIVE', 1000)" class="w-full py-4 bg-primary text-black font-bold font-mono text-xs tracking-widest uppercase hover:brightness-110 transition-all">
-                    Deploy Now
-                </button>
-            </div>
-
-            <div class="border border-[#D4AF37]/50 bg-[#0a0a0a] p-8 flex flex-col hover:border-[#D4AF37] transition-all">
-                <div class="text-[#D4AF37] font-mono text-[11px] tracking-[0.2em] uppercase mb-4">Master</div>
-
-                <div class="flex items-baseline gap-2 mb-3">
-                    <span class="text-4xl font-bold text-[#D4AF37]">5,000</span>
-                    <span class="text-gray-500 font-mono text-sm">COINS</span>
-                </div>
-                <p class="text-gray-400 text-sm leading-relaxed mb-8 h-16">
-                    Truy cập tối thượng. Lượng Coin khổng lồ đủ để thuê các Chuyên gia hàng đầu 1-on-1.
-                </p>
-
-                <div class="space-y-4 mb-10 flex-grow">
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-[#D4AF37]"></div><span class="text-white text-sm">All Operative features</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-[#D4AF37]"></div><span class="text-white text-sm">Unlimited 1-on-1 mentorship</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-[#D4AF37]"></div><span class="text-white text-sm">Gold advisory access</span></div>
-                    <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 bg-[#D4AF37]"></div><span class="text-white text-sm">Deep-net clearance</span></div>
-                </div>
-
-                <button onclick="purchaseTier('MASTER', 5000)" class="w-full py-4 bg-[#D4AF37] text-black font-bold font-mono text-xs tracking-widest uppercase hover:bg-[#e8c84a] transition-all">
-                    Authorize
-                </button>
-            </div>
-
         </div>
     </div>
     </main>

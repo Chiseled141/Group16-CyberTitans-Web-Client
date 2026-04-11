@@ -2,13 +2,16 @@ package com.Se2.CyberWebApp.controller;
 
 import com.Se2.CyberWebApp.entity.Publication;
 import com.Se2.CyberWebApp.entity.PublicationType;
+import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.repository.PublicationRepository;
 import com.Se2.CyberWebApp.repository.PublicationTypeRepository;
+import com.Se2.CyberWebApp.repository.UserRepository;
+import com.Se2.CyberWebApp.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +26,46 @@ public class PublicationController {
 
     @Autowired
     private PublicationTypeRepository publicationTypeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @PostMapping("/publications")
+    public ResponseEntity<?> createPublication(@RequestBody Map<String, Object> body,
+                                               @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            User creator = userRepository.findByUsername(username).orElse(null);
+            if (creator == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+            Publication p = new Publication();
+            p.setTitle(body.getOrDefault("title", "Untitled").toString());
+            p.setAuthors(body.getOrDefault("authors", creator.getName()).toString());
+            p.setAbstractText(body.containsKey("abstractText") ? body.get("abstractText").toString() : "");
+            p.setKeyword(body.containsKey("keyword") ? body.get("keyword").toString() : "");
+            p.setYear(body.containsKey("year") ? Integer.parseInt(body.get("year").toString()) : LocalDateTime.now().getYear());
+            p.setType(body.containsKey("type") ? Short.parseShort(body.get("type").toString()) : (short) 1);
+            p.setJournal(body.containsKey("journal") ? body.get("journal").toString() : null);
+            p.setPublisher(body.containsKey("publisher") ? body.get("publisher").toString() : null);
+            p.setUrl(body.containsKey("url") ? body.get("url").toString() : null);
+            p.setTeamAbbr(creator.getName());
+            p.setStatus((short) 1);
+
+            String rawSlug = p.getTitle().toLowerCase().replaceAll("[^a-z0-9]+", "-");
+            p.setSlug(rawSlug + "-" + System.currentTimeMillis());
+            p.setCreatedAt(LocalDateTime.now());
+            p.setUpdatedAt(LocalDateTime.now());
+
+            publicationRepository.save(p);
+            return ResponseEntity.ok(Map.of("message", "Publication submitted", "id", p.getId()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to submit publication"));
+        }
+    }
 
     @GetMapping("/publications")
     public List<Map<String, Object>> getPublications() {
