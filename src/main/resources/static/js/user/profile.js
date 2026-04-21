@@ -218,8 +218,8 @@ async function openProfileModal(id) {
         // Scenario 2: Viewing another member's profile
         else {
             const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const pendingReq = await getMyPendingRequest(user.id);
-            if (pendingReq) {
+            const pendingReq = user.isMentor ? await getMyPendingRequest(user.id) : null;
+            if (user.isMentor && pendingReq) {
                 actionButtonsHTML = `
                     <div class="w-full bg-yellow-500/10 border border-yellow-500/30 p-3 mb-3 text-center font-mono text-[10px] text-yellow-400 uppercase tracking-widest">
                         ● Request pending since ${new Date(pendingReq.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
@@ -227,10 +227,9 @@ async function openProfileModal(id) {
                     <button onclick="cancelMentorRequest(${user.id})" class="w-full bg-red-600/20 border border-red-500/50 text-red-400 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px] mb-2">
                         CANCEL REQUEST
                     </button>`;
-            } else {
+            } else if (user.isMentor) {
                 actionButtonsHTML = `
                     <div id="mentor-request-form-${user.id}">
-                        <textarea id="mentor-msg-${user.id}" placeholder="Write a message to ${user.name}..." class="w-full bg-[#0a0a0a] border border-white/10 text-white font-mono text-xs p-3 mb-2 resize-none h-20 focus:outline-none focus:border-primary/50 placeholder-gray-600"></textarea>
                         <button onclick="handleMentorRequest(${user.id}, '${safeName}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
                             MENTOR REQUEST (500 COINS)
                         </button>

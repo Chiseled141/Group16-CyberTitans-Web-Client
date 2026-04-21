@@ -59,8 +59,7 @@ async function handleMentorRequest(mentorId, mentorName) {
         return;
     }
 
-    const msgEl = document.getElementById(`mentor-msg-${mentorId}`);
-    const message = msgEl ? msgEl.value.trim() : '';
+    const message = '';
 
     try {
         const res = await fetch(`${API_BASE_URL}/mentor/requests`, {
@@ -70,7 +69,8 @@ async function handleMentorRequest(mentorId, mentorName) {
         });
 
         if (!res.ok) {
-            showToast('Failed to send request. Please try again.', 'error');
+            const err = await res.json().catch(() => ({}));
+            showToast(err.message || 'Failed to send request.', 'error');
             return;
         }
 

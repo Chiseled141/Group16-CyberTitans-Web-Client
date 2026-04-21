@@ -6,6 +6,7 @@ import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.entity.UserExperience;
 import com.Se2.CyberWebApp.repository.EducationRepository;
 import com.Se2.CyberWebApp.repository.MentorshipRequestRepository;
+import com.Se2.CyberWebApp.repository.TeamRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
 import com.Se2.CyberWebApp.repository.UserExperienceRepository;
 import java.time.LocalDateTime;
@@ -22,17 +23,11 @@ import java.util.Map;
 @RequestMapping("/api/v1/team")
 public class TeamController {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserExperienceRepository experienceRepository;
-
-    @Autowired
-    private EducationRepository educationRepository;
-
-    @Autowired
-    private MentorshipRequestRepository mentorshipRequestRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private UserExperienceRepository experienceRepository;
+    @Autowired private EducationRepository educationRepository;
+    @Autowired private MentorshipRequestRepository mentorshipRequestRepository;
+    @Autowired private TeamRepository teamRepository;
 
     // --- API 1: Take list of all Mem ---
     @GetMapping("/members")
@@ -73,6 +68,7 @@ public class TeamController {
         response.put("address", user.getAddress() != null ? user.getAddress() : "UNKNOWN LOCATION");
         response.put("email", user.getEmail() != null ? user.getEmail() : "ENCRYPTED");
         response.put("coin", user.getCoin() != null ? user.getCoin() : 0);
+        response.put("isMentor", teamRepository.findByUserId(id).isPresent());
 
         return ResponseEntity.ok(response);
     }
