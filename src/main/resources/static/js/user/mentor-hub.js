@@ -205,6 +205,7 @@ async function approveRequest(reqId) {
         const name = req ? req.menteeName : 'Mentee';
         _cachedRequests = null;
         showToast(`${name} accepted as mentee!`, 'success');
+        await _addCoinsToSelf(100, 'accepting a mentee');
         await _updateInboxBadge();
         showMentorHubTab('inbox');
     } catch { showToast('Failed to accept request', 'error'); }
