@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', includeHTML);
 
 function startCountdown() {
-    const target = new Date('2026-04-12T00:00:00').getTime();
+    const target = new Date('2026-05-10T00:00:00').getTime();
 
     function tick() {
         const now = Date.now();
@@ -28,11 +28,10 @@ function startCountdown() {
     setInterval(tick, 1000);
 }
 
-function initializeApp() {
+async function initializeApp() {
     console.log("[SYSTEM] Starting CyberTitans...");
-    checkLoginState(); 
-    
     if (typeof startCountdown === "function") startCountdown();
+    await checkLoginState();
     buildRanking();
     buildTeam();
     buildProjects();

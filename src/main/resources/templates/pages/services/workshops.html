@@ -96,7 +96,7 @@
         <h2 class="font-headline text-3xl font-bold mb-4">Register for a Workshop</h2>
         <p class="text-on-surface-variant text-sm max-w-md mx-auto mb-6">All workshops are free for club members and recorded for later review. Non-members can attend select sessions.</p>
         <button id="btn-register-workshops"
-          onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');}else{openModal('login-modal');}})(this)"
+          onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');showToast('Workshop access granted! Check the events page for upcoming sessions.', 'success');}else{openModal('login-modal');}})(this)"
           class="px-8 py-3 bg-tertiary text-black font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Become a Member</button>
       </div>
     </div>

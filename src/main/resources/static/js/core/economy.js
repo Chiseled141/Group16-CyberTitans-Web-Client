@@ -54,33 +54,45 @@ async function handleMentorRequest(mentorId, mentorName) {
     const currentUser = JSON.parse(savedUserStr);
     const MENTOR_COST = 500;
 
-    if (!currentUser.coin || currentUser.coin < MENTOR_COST) {
+    if ((currentUser.coin || 0) < MENTOR_COST) {
         showToast(`Insufficient Coins. Need ${MENTOR_COST}, have ${currentUser.coin || 0}.`, 'error');
         return;
     }
 
+    const msgEl = document.getElementById(`mentor-msg-${mentorId}`);
+    const message = msgEl ? msgEl.value.trim() : '';
+
     try {
-        showToast(`Connecting to ${mentorName}...`, 'success');
-        const response = await fetch(`${API_BASE_URL}/team/members/${mentorId}/request-mentor`, {
+        const res = await fetch(`${API_BASE_URL}/mentor/requests`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ menteeId: currentUser.id })
+            body: JSON.stringify({ mentorId, message })
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            currentUser.coin = data.remainingCoins;
-            const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
-            storage.setItem('cyber_user', JSON.stringify(currentUser));
-            applyLoginState(currentUser);
-            showToast(`Request sent to ${mentorName}! −${MENTOR_COST} Coins.`, 'success');
-            // Refresh the profile modal to show pending state
-            openProfileModal(mentorId);
-        } else {
-            const errorData = await response.json();
-            showToast(`Error: ${errorData.message}`, 'error');
+        if (!res.ok) {
+            showToast('Failed to send request. Please try again.', 'error');
+            return;
         }
-    } catch (error) {
+
+        // Deduct coins after confirmed request
+        const newCoinBalance = (currentUser.coin || 0) - MENTOR_COST;
+        await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ coin: newCoinBalance })
+        });
+
+        currentUser.coin = newCoinBalance;
+        const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+        storage.setItem('cyber_user', JSON.stringify(currentUser));
+        applyLoginState(currentUser);
+        showToast(`Request sent to ${mentorName}! −${MENTOR_COST} Coins.`, 'success');
+
+        const form = document.getElementById(`mentor-request-form-${mentorId}`);
+        if (form) {
+            form.innerHTML = `<div class="w-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold font-mono tracking-widest py-3.5 text-[11px] mb-2 text-center cursor-not-allowed">● REQUEST PENDING</div>`;
+        }
+    } catch {
         showToast('Connection failed.', 'error');
     }
 }

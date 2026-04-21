@@ -33,7 +33,7 @@ async function showMentorHubTab(tab) {
     if (!savedUserStr) return;
     const currentUser = JSON.parse(savedUserStr);
 
-    ['inbox', 'assigned', 'guide'].forEach(t => {
+    ['inbox', 'assigned', 'guide', 'skills'].forEach(t => {
         const btn = document.getElementById('tab-' + t);
         if (!btn) return;
         if (t === tab) {
@@ -49,7 +49,8 @@ async function showMentorHubTab(tab) {
     if (!content) return;
 
     const requests = _cachedRequests || await _fetchRequests();
-    const mine = requests.filter(r => r.mentorId === currentUser.id);
+    // GET /mentor/requests already filters server-side for the logged-in mentor's team
+    const mine = requests;
 
     if (tab === 'inbox') {
         const pending = mine.filter(r => r.status === 'PENDING');
@@ -101,6 +102,42 @@ async function showMentorHubTab(tab) {
                     </button>
                 </div>
             </div>`).join('');
+
+    } else if (tab === 'skills') {
+        const currentSkills = (currentUser.experiences || []).map(e => e.name).filter(Boolean);
+        const skillChips = currentSkills.length
+            ? currentSkills.map(s => `
+                <span class="inline-flex items-center gap-1.5 tag-primary pf-skill-tag">
+                    ${s}
+                    <button onclick="removeMentorSkill('${s}')" class="text-primary hover:text-red-400 transition-colors leading-none">&times;</button>
+                </span>`).join('')
+            : '<p class="font-mono text-xs text-gray-500 italic">No skills listed yet.</p>';
+
+        content.innerHTML = `
+            <div class="max-w-xl">
+                <h3 class="font-headline text-sm font-bold uppercase tracking-widest mb-5 text-white flex items-center gap-3">
+                    <span class="w-2 h-2 bg-primary"></span>Update Mentor Skills
+                </h3>
+                <p class="font-mono text-xs text-gray-500 mb-6 leading-relaxed">These skills are shown on your mentor card and help mentees find you. Add skills that match your expertise.</p>
+                <div class="mb-6">
+                    <label class="font-mono text-[10px] uppercase tracking-widest text-gray-500 block mb-3">Current Skills</label>
+                    <div id="mentor-skill-chips" class="flex flex-wrap gap-2 min-h-[40px]">${skillChips}</div>
+                </div>
+                <div class="flex gap-3 mb-6">
+                    <input id="mentor-skill-input" type="text" placeholder="e.g. Spring Boot, Docker, Python..."
+                        class="flex-1 bg-[#0a0a0a] border border-white/10 text-white font-mono text-sm p-3 focus:border-primary outline-none placeholder:text-gray-600"
+                        onkeydown="if(event.key==='Enter'){addMentorSkill();event.preventDefault();}"/>
+                    <button onclick="addMentorSkill()"
+                        class="px-5 py-3 bg-primary text-black font-bold font-mono text-[10px] uppercase tracking-widest hover:brightness-110 transition-all">
+                        ADD
+                    </button>
+                </div>
+                <button onclick="saveMentorSkills()"
+                    class="w-full py-3.5 border border-primary text-primary font-bold font-mono text-[10px] uppercase tracking-widest hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[14px]">save</span> SAVE SKILLS
+                </button>
+            </div>`;
+        return;
 
     } else if (tab === 'guide') {
         const accepted = mine.filter(r => r.status === 'ACCEPTED');
@@ -164,7 +201,7 @@ async function approveRequest(reqId) {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const req = (_cachedRequests || []).find(r => r.id === reqId);
+        const req = (_cachedRequests || []).find(r => String(r.id) === String(reqId));
         const name = req ? req.menteeName : 'Mentee';
         _cachedRequests = null;
         showToast(`${name} accepted as mentee!`, 'success');
@@ -180,7 +217,7 @@ async function declineRequest(reqId) {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const req = (_cachedRequests || []).find(r => r.id === reqId);
+        const req = (_cachedRequests || []).find(r => String(r.id) === String(reqId));
         const name = req ? req.menteeName : 'Mentee';
         _cachedRequests = null;
         showToast(`Request from ${name} declined.`, 'success');
@@ -225,8 +262,60 @@ function submitGuidance() {
     showMentorHubTab('guide');
 }
 
+function _getMentorSkills() {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return [];
+    const u = JSON.parse(savedUserStr);
+    return (u.experiences || []).map(e => e.name).filter(Boolean);
+}
+
+function addMentorSkill() {
+    const input = document.getElementById('mentor-skill-input');
+    if (!input || !input.value.trim()) return;
+    const skill = input.value.trim();
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return;
+    const u = JSON.parse(savedUserStr);
+    const skills = (u.experiences || []).map(e => e.name).filter(Boolean);
+    if (skills.includes(skill)) { showToast('Skill already added', 'error'); return; }
+    skills.push(skill);
+    u.experiences = skills.map(s => ({ name: s }));
+    const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+    storage.setItem('cyber_user', JSON.stringify(u));
+    input.value = '';
+    showMentorHubTab('skills');
+}
+
+function removeMentorSkill(skill) {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return;
+    const u = JSON.parse(savedUserStr);
+    u.experiences = (u.experiences || []).filter(e => e.name !== skill);
+    const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
+    storage.setItem('cyber_user', JSON.stringify(u));
+    showMentorHubTab('skills');
+}
+
+async function saveMentorSkills() {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (!savedUserStr || !token) return showToast('Session expired. Please log in again.', 'error');
+    const u = JSON.parse(savedUserStr);
+    try {
+        const res = await fetch(`${API_BASE_URL}/team/members/${u.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ name: u.name, email: u.email, experiences: u.experiences || [] })
+        });
+        if (res.ok) showToast('Skills updated successfully!', 'success');
+        else showToast('Skills saved locally.', 'success');
+    } catch { showToast('Skills saved locally.', 'success'); }
+}
+
 async function _updateInboxBadge() {
     const requests = await _fetchRequests();
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const currentUser = savedUserStr ? JSON.parse(savedUserStr) : null;
     const count = requests.filter(r => r.status === 'PENDING').length;
     const badge = document.getElementById('mentor-inbox-badge');
     if (!badge) return;

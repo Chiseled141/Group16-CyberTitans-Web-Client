@@ -65,6 +65,12 @@ function applyLoginState(userData) {
             const isMentor = (userData.role || '').toUpperCase() === 'MENTOR';
             mentorHubLink.classList.toggle('hidden', !isMentor);
         }
+
+        // Show add buttons now that user is logged in
+        const projectBtn = document.getElementById('create-project-btn');
+        if (projectBtn) projectBtn.classList.replace('hidden', 'flex');
+        const pubBtn = document.getElementById('create-publication-btn');
+        if (pubBtn) pubBtn.classList.replace('hidden', 'flex');
     }
 }
 
@@ -73,7 +79,7 @@ async function doLogin() {
     const passEl = document.getElementById('login-pass');
     const keepPersistentEl = document.getElementById('keep-persistent');
     
-    if (!userEl.value || !passEl.value) return showToast('Vui lòng nhập đủ thông tin!', 'error');
+    if (!userEl.value || !passEl.value) return showToast('Please fill in all fields!', 'error');
 
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -92,10 +98,10 @@ async function doLogin() {
             storage.setItem('cyber_token', userData.token); 
             
             closeModal('login-modal'); applyLoginState(userData);
-            showToast(`ACCESS GRANTED. Chào mừng, ${userData.name}!`, 'success');
+            showToast(`ACCESS GRANTED. Welcome, ${userData.name}!`, 'success');
             userEl.value = ''; passEl.value = '';
-        } else { showToast('ACCESS DENIED: Sai thông tin.', 'error'); }
-    } catch (err) { showToast('SERVER ERROR: Lỗi kết nối.', 'error'); }
+        } else { showToast('ACCESS DENIED: Invalid credentials.', 'error'); }
+    } catch (err) { showToast('SERVER ERROR: Connection failed.', 'error'); }
 }
 
 function logout() {

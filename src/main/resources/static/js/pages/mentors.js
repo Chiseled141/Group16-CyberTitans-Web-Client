@@ -26,13 +26,15 @@ async function buildMentorList(skillFilter) {
             }).sort((a, b) => b.reputationScore - a.reputationScore);
         }
 
-        const members = (skillFilter && skillFilter !== 'ALL')
-            ? _mentorCache.filter(m =>
-                (m.experiences || []).some(e =>
-                    (e.name || '').toLowerCase().includes(skillFilter.toLowerCase())
-                )
-              )
-            : _mentorCache;
+        const members = skillFilter === 'RECOMMENDED'
+            ? _mentorCache.slice(0, 3)
+            : (skillFilter && skillFilter !== 'ALL')
+                ? _mentorCache.filter(m =>
+                    (m.experiences || []).some(e =>
+                        (e.name || '').toLowerCase().includes(skillFilter.toLowerCase())
+                    )
+                  )
+                : _mentorCache;
 
         if (!members.length) {
             container.innerHTML = `<div class="col-span-3 text-center py-10 font-mono text-gray-500 text-xs uppercase tracking-widest">No mentors found for "${skillFilter}"</div>`;
@@ -45,9 +47,13 @@ async function buildMentorList(skillFilter) {
             ).join('');
             const repColor = i === 0 ? 'text-[#fbbf24]' : i === 1 ? 'text-[#e5e7eb]' : i === 2 ? 'text-[#f97316]' : 'text-primary';
             const repLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+            const recBadge = (skillFilter === 'RECOMMENDED')
+                ? `<div class="mb-3"><span class="font-mono text-[9px] uppercase tracking-widest text-[#fbbf24] border border-[#fbbf24]/30 px-2 py-0.5 bg-[#fbbf24]/5">⭐ RECOMMENDED</span></div>`
+                : '';
             return `
                 <div class="hack-card p-6 card-lift flex flex-col">
                     <div class="scanner"></div>
+                    ${recBadge}
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
                             ${_avatar(m)}

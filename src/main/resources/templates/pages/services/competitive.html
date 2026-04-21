@@ -94,7 +94,7 @@
         <h2 class="font-headline text-3xl font-bold mb-4">Join the Training Group</h2>
         <p class="text-on-surface-variant text-sm max-w-md mx-auto mb-6">No prerequisites — just the willingness to grind. All skill levels welcome.</p>
         <button id="btn-register-competitive"
-          onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');}else{openModal('login-modal');}})(this)"
+          onclick="(function(btn){if(sessionStorage.getItem('cyber_user')||localStorage.getItem('cyber_user')){btn.disabled=true;btn.textContent='✓ Registered';btn.classList.add('opacity-60','cursor-not-allowed');btn.classList.remove('hover:brightness-110');showToast('You have joined Competitive Programming! Start grinding on Codeforces.', 'success');}else{openModal('login-modal');}})(this)"
           class="px-8 py-3 bg-primary text-[#0d6100] font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all">Register Now</button>
       </div>
     </div>

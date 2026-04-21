@@ -5,7 +5,7 @@ async function includeHTML() {
         try {
             const response = await fetch(file + '?v=' + new Date().getTime());
             if (response.ok) el.outerHTML = await response.text();
-        } catch (err) { console.error("[SYSTEM] Lỗi nạp HTML:", err); }
+        } catch (err) { console.error("[SYSTEM] Failed to load HTML:", err); }
     }));
     initializeApp();
 }

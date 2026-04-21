@@ -146,7 +146,7 @@ async function handleAvatarUpload(event) {
 async function saveAccountProfile() {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
     const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
-    if (!savedUserStr || !token) return showToast('Lỗi: Phiên đăng nhập hết hạn!', 'error');
+    if (!savedUserStr || !token) return showToast('Error: Session expired. Please log in again.', 'error');
 
     const currentUser = JSON.parse(savedUserStr);
     const tags = _getTags();
@@ -170,8 +170,8 @@ async function saveAccountProfile() {
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
             applyLoginState(currentUser);
-        } else { showToast('Lỗi: Không có quyền sửa.', 'error'); }
-    } catch (error) { showToast('Lỗi Server.', 'error'); }
+        } else { showToast('Error: Permission denied.', 'error'); }
+    } catch (error) { showToast('Server error.', 'error'); }
 }
 
 async function openProfileModal(id) {
@@ -180,7 +180,7 @@ async function openProfileModal(id) {
     const modalContent = document.getElementById('profile-modal-content');
     const modalBody = document.getElementById('modal-body');
     
-    // 1. Kịch bản GUEST: Nếu không có token, yêu cầu đăng nhập
+    // 1. GUEST scenario: no token, require login
     if (!token) return showToast("Please log in to view profiles!", "error");
 
     modal.classList.remove('hidden');
@@ -195,7 +195,7 @@ async function openProfileModal(id) {
         if (!response.ok) throw new Error("Data access denied.");
         const user = await response.json(); 
         
-        // --- LOGIC PHÂN QUYỀN HIỂN THỊ NÚT BẤM ---
+        // --- Button visibility logic based on role ---
         const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
         if (!savedUserStr) { logout(); return; }
         const currentUser = JSON.parse(savedUserStr);
@@ -203,15 +203,16 @@ async function openProfileModal(id) {
 
         let actionButtonsHTML = '';
 
-        // KỊCH BẢN 1: Tự xem Profile của chính mình
+        // Scenario 1: Viewing own profile
         if (currentUser.id === user.id) {
             actionButtonsHTML = `
                 <button onclick="showPage('my-profile'); closeProfileModal();" class="w-full bg-secondary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px]">
                     EDIT MY PROFILE
                 </button>`;
         }
-        // KỊCH BẢN 2: Xem Profile của người khác
+        // Scenario 2: Viewing another member's profile
         else {
+            const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             const pendingReq = await getMyPendingRequest(user.id);
             if (pendingReq) {
                 actionButtonsHTML = `
@@ -222,18 +223,26 @@ async function openProfileModal(id) {
                         CANCEL REQUEST
                     </button>`;
             } else {
-                const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 actionButtonsHTML = `
-                    <button onclick="handleMentorRequest(${user.id}, '${safeName}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
-                        MENTOR REQUEST (500 COINS)
-                    </button>`;
+                    <div id="mentor-request-form-${user.id}">
+                        <textarea id="mentor-msg-${user.id}" placeholder="Write a message to ${user.name}..." class="w-full bg-[#0a0a0a] border border-white/10 text-white font-mono text-xs p-3 mb-2 resize-none h-20 focus:outline-none focus:border-primary/50 placeholder-gray-600"></textarea>
+                        <button onclick="handleMentorRequest(${user.id}, '${safeName}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
+                            MENTOR REQUEST (500 COINS)
+                        </button>
+                    </div>`;
             }
             actionButtonsHTML += `
-                <button class="w-full bg-[#111] border border-white/10 text-white font-bold font-mono tracking-widest py-3.5 hover:border-primary transition-all text-[11px]">
-                    MESSAGE
-                </button>`;
+                <div id="message-form-${user.id}" class="mt-2">
+                    <button onclick="toggleMessageForm(${user.id})" class="w-full bg-[#111] border border-white/10 text-white font-bold font-mono tracking-widest py-3.5 hover:border-primary transition-all text-[11px]">
+                        MESSAGE
+                    </button>
+                    <div id="message-box-${user.id}" class="hidden mt-2">
+                        <textarea id="message-input-${user.id}" placeholder="Type your message..." class="w-full bg-[#0a0a0a] border border-white/10 text-white font-mono text-xs p-3 mb-2 resize-none h-20 focus:outline-none focus:border-primary/50 placeholder-gray-600"></textarea>
+                        <button onclick="sendMessage(${user.id}, '${safeName}')" class="w-full bg-secondary text-black font-bold font-mono tracking-widest py-2.5 hover:brightness-110 transition-all text-[11px]">SEND</button>
+                    </div>
+                </div>`;
 
-            // ĐẶC QUYỀN ADMIN: Hiện thêm nút Xóa đặc vụ và Award Coins
+            // ADMIN privilege: show delete and award coins buttons
             if (viewerRole === 'ADMIN' || viewerRole === 'SUPER ADMIN') {
                 actionButtonsHTML += `
                     <button onclick="openAwardCoinsModal(${user.id}, '${safeName}')" class="w-full mt-4 bg-primary/10 border border-primary/30 text-primary font-bold font-mono tracking-widest py-3.5 hover:bg-primary hover:text-black transition-all text-[11px]">
@@ -245,7 +254,7 @@ async function openProfileModal(id) {
             }
         }
 
-        // --- XỬ LÝ TIMELINE KINH NGHIỆM ---
+        // --- Experience timeline ---
         const defaultAvt = "https://ui-avatars.com/api/?background=222&color=fff&name=";
         const avatarUrl = user.avatar || (defaultAvt + user.name);
 
@@ -701,4 +710,19 @@ async function adminDeleteUser(userId) {
     } catch (error) {
         showToast("SERVER ERROR: Cannot connect to the server.", "error");
     }
+}
+
+function toggleMessageForm(userId) {
+    const box = document.getElementById(`message-box-${userId}`);
+    if (box) box.classList.toggle('hidden');
+}
+
+function sendMessage(userId, userName) {
+    const input = document.getElementById(`message-input-${userId}`);
+    const msg = input ? input.value.trim() : '';
+    if (!msg) return showToast('Please type a message first.', 'error');
+    showToast(`Message sent to ${userName}!`, 'success');
+    const box = document.getElementById(`message-box-${userId}`);
+    if (box) box.classList.add('hidden');
+    if (input) input.value = '';
 }

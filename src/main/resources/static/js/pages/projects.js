@@ -241,3 +241,70 @@ async function openProjectModal(id) {
         body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
     }
 }
+
+let _selectedProjectId = null;
+let _selectedProjectName = null;
+
+async function openProjectPickerModal() {
+    const modal = document.getElementById('project-picker-modal');
+    const list = document.getElementById('project-picker-list');
+    const confirmBtn = document.getElementById('project-picker-confirm');
+    if (!modal || !list) return;
+
+    _selectedProjectId = null;
+    _selectedProjectName = null;
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.classList.add('opacity-40','cursor-not-allowed'); }
+
+    modal.classList.remove('hidden');
+    list.innerHTML = '<p class="text-gray-500 font-mono text-xs text-center animate-pulse">Loading projects...</p>';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/projects`);
+        const projects = res.ok ? await res.json() : STATIC_PROJECTS;
+        const active = projects.filter(p => (p.status||'').toUpperCase() !== 'COMPLETED');
+        if (!active.length) { list.innerHTML = '<p class="text-gray-500 font-mono text-xs text-center">No active projects available.</p>'; return; }
+        list.innerHTML = active.map(p => `
+            <div onclick="selectProjectPitch(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}', this)"
+                class="project-pick-item border border-white/10 p-4 cursor-pointer hover:border-primary/50 transition-all">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="font-headline font-bold text-white text-sm">${p.name}</p>
+                        <p class="font-mono text-[10px] text-gray-500 mt-1 line-clamp-2">${p.description || '—'}</p>
+                    </div>
+                    <span class="font-mono text-[9px] uppercase px-2 py-1 border border-primary/30 text-primary shrink-0">${p.status || 'ACTIVE'}</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5 mt-2">${(p.techStack||[]).slice(0,4).map(t=>`<span class="tag-secondary pf-skill-tag">${t}</span>`).join('')}</div>
+            </div>`).join('');
+    } catch {
+        list.innerHTML = STATIC_PROJECTS.map(p => `
+            <div onclick="selectProjectPitch(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}', this)"
+                class="project-pick-item border border-white/10 p-4 cursor-pointer hover:border-primary/50 transition-all">
+                <p class="font-headline font-bold text-white text-sm">${p.name}</p>
+                <p class="font-mono text-[10px] text-gray-500 mt-1">${p.description || '—'}</p>
+            </div>`).join('');
+    }
+}
+
+function selectProjectPitch(id, name, el) {
+    _selectedProjectId = id;
+    _selectedProjectName = name;
+    document.querySelectorAll('.project-pick-item').forEach(i => i.classList.remove('border-primary','bg-primary/5'));
+    el.classList.add('border-primary','bg-primary/5');
+    const confirmBtn = document.getElementById('project-picker-confirm');
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.classList.remove('opacity-40','cursor-not-allowed'); }
+    const label = document.getElementById('project-picker-selected-label');
+    if (label) label.innerHTML = `<span class="text-primary">Selected:</span> ${name}`;
+}
+
+function closeProjectPickerModal() {
+    const modal = document.getElementById('project-picker-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function confirmProjectPitch() {
+    if (!_selectedProjectName) return;
+    closeProjectPickerModal();
+    const btn = document.getElementById('btn-register-incubator');
+    if (btn) { btn.disabled = true; btn.textContent = '✓ Pitched'; btn.classList.add('opacity-60','cursor-not-allowed'); }
+    showToast(`Pitch submitted for "${_selectedProjectName}"! Our team will review it soon.`, 'success');
+}

@@ -56,9 +56,26 @@ function _markReadId(id) {
     }
 }
 
+function _getMentorRequestNotifs() {
+    try { return JSON.parse(localStorage.getItem('mentor_request_notifs') || '[]'); } catch { return []; }
+}
+
+function _getMyPendingMentorRequests() {
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    if (!savedUserStr) return [];
+    const me = JSON.parse(savedUserStr);
+    return _getMentorRequestNotifs().filter(n => n.mentorId === me.id && n.status === 'PENDING');
+}
+
+function _updateMentorRequestBadge() {
+    _updateBellBadge();
+}
+
 function _updateBellBadge() {
     const read  = _getReadIds();
-    const count = ANNOUNCEMENTS.filter(a => !read.includes(a.id)).length;
+    const annUnread = ANNOUNCEMENTS.filter(a => !read.includes(a.id)).length;
+    const reqCount  = _getMyPendingMentorRequests().length;
+    const count = annUnread + reqCount;
     const badge = document.getElementById('notif-badge');
     if (!badge) return;
     if (count > 0) {
@@ -67,6 +84,56 @@ function _updateBellBadge() {
     } else {
         badge.classList.add('hidden');
     }
+}
+
+function acceptMentorNotif(notifId) {
+    const notifs = _getMentorRequestNotifs();
+    const n = notifs.find(x => x.id === notifId);
+    if (!n) return;
+    n.status = 'ACCEPTED';
+    localStorage.setItem('mentor_request_notifs', JSON.stringify(notifs));
+
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (token) {
+        fetch(`${API_BASE_URL}/mentor/requests`, { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : [])
+            .then(requests => {
+                const match = requests.find(r => r.menteeId === n.menteeId && r.mentorId === n.mentorId && r.status === 'PENDING');
+                if (match) {
+                    fetch(`${API_BASE_URL}/mentor/requests/${match.id}/accept`, {
+                        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                }
+            }).catch(() => {});
+    }
+    showToast(`Accepted request from ${n.menteeName}!`, 'success');
+    _updateBellBadge();
+    _renderAnnPanel();
+}
+
+function declineMentorNotif(notifId) {
+    const notifs = _getMentorRequestNotifs();
+    const n = notifs.find(x => x.id === notifId);
+    if (!n) return;
+    n.status = 'DECLINED';
+    localStorage.setItem('mentor_request_notifs', JSON.stringify(notifs));
+
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    if (token) {
+        fetch(`${API_BASE_URL}/mentor/requests`, { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : [])
+            .then(requests => {
+                const match = requests.find(r => r.menteeId === n.menteeId && r.mentorId === n.mentorId && r.status === 'PENDING');
+                if (match) {
+                    fetch(`${API_BASE_URL}/mentor/requests/${match.id}/decline`, {
+                        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                }
+            }).catch(() => {});
+    }
+    showToast(`Declined request from ${n.menteeName}.`, 'success');
+    _updateBellBadge();
+    _renderAnnPanel();
 }
 
 function openAnnouncementsPanel() {
@@ -104,7 +171,37 @@ function _renderAnnPanel() {
     const container = document.getElementById('ann-panel-list');
     if (!container) return;
     const read = _getReadIds();
-    container.innerHTML = ANNOUNCEMENTS.map(a => {
+
+    const pendingReqs = _getMyPendingMentorRequests();
+    const reqHTML = pendingReqs.map(n => `
+        <div class="border-b border-white/5 px-5 py-4 bg-primary/5">
+            <div class="flex items-start gap-3">
+                <div class="w-7 h-7 flex items-center justify-center flex-shrink-0 mt-0.5 bg-primary/10 border border-primary/30">
+                    <span class="material-symbols-outlined text-[14px] text-primary">school</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-mono text-[9px] uppercase tracking-widest text-primary">MENTOR REQUEST</span>
+                        <span class="font-mono text-[9px] text-gray-500">${n.date}</span>
+                    </div>
+                    <p class="text-sm text-white font-bold leading-tight mb-1">${n.menteeName} wants you as a mentor</p>
+                    <p class="text-xs text-gray-500 font-mono mb-3">Sent a mentorship request and is waiting for your response.</p>
+                    <div class="flex gap-2">
+                        <button onclick="acceptMentorNotif('${n.id}')"
+                            class="flex-1 py-1.5 bg-primary text-black font-bold font-mono text-[9px] uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">check</span> ACCEPT
+                        </button>
+                        <button onclick="declineMentorNotif('${n.id}')"
+                            class="flex-1 py-1.5 bg-red-600/20 border border-red-500/40 text-red-400 font-bold font-mono text-[9px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-[11px]">close</span> DECLINE
+                        </button>
+                    </div>
+                </div>
+                <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2 bg-primary animate-pulse"></div>
+            </div>
+        </div>`).join('');
+
+    container.innerHTML = reqHTML + ANNOUNCEMENTS.map(a => {
         const t      = _ANN_META[a.type] || _ANN_META.INFO;
         const isRead = read.includes(a.id);
         return `
