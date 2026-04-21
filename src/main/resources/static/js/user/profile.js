@@ -218,8 +218,12 @@ async function openProfileModal(id) {
         // Scenario 2: Viewing another member's profile
         else {
             const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const pendingReq = user.isMentor ? await getMyPendingRequest(user.id) : null;
-            if (user.isMentor && pendingReq) {
+            const viewerIsMentor = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.ok ? r.json() : {}).then(d => !!d.isMentor).catch(() => false);
+
+            const pendingReq = (user.isMentor && !viewerIsMentor) ? await getMyPendingRequest(user.id) : null;
+            if (user.isMentor && !viewerIsMentor && pendingReq) {
                 actionButtonsHTML = `
                     <div class="w-full bg-yellow-500/10 border border-yellow-500/30 p-3 mb-3 text-center font-mono text-[10px] text-yellow-400 uppercase tracking-widest">
                         ● Request pending since ${new Date(pendingReq.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
@@ -227,7 +231,7 @@ async function openProfileModal(id) {
                     <button onclick="cancelMentorRequest(${user.id})" class="w-full bg-red-600/20 border border-red-500/50 text-red-400 font-bold font-mono tracking-widest py-3.5 hover:bg-red-600 hover:text-white transition-all text-[11px] mb-2">
                         CANCEL REQUEST
                     </button>`;
-            } else if (user.isMentor) {
+            } else if (user.isMentor && !viewerIsMentor) {
                 actionButtonsHTML = `
                     <div id="mentor-request-form-${user.id}">
                         <button onclick="handleMentorRequest(${user.id}, '${safeName}')" class="w-full bg-primary text-black font-bold font-mono tracking-widest py-3.5 hover:bg-white transition-all text-[11px] mb-2">
