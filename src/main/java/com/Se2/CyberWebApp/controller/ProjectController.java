@@ -3,6 +3,7 @@ package com.Se2.CyberWebApp.controller;
 import com.Se2.CyberWebApp.entity.Project;
 import com.Se2.CyberWebApp.entity.User;
 import com.Se2.CyberWebApp.repository.ProjectRepository;
+import com.Se2.CyberWebApp.repository.ProjectTaskRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
 import com.Se2.CyberWebApp.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,14 +18,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1")
 public class ProjectController {
 
-    @Autowired
-    private ProjectRepository projectRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private JwtUtil jwtUtil;
+    @Autowired private ProjectRepository projectRepository;
+    @Autowired private ProjectTaskRepository taskRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private JwtUtil jwtUtil;
 
     @GetMapping("/projects")
     public List<Map<String, Object>> getProjects() {
@@ -169,9 +166,8 @@ public class ProjectController {
         }
         dto.put("members", members);
 
-        // Totals not in DB — default 0
-        dto.put("totalTasks",     0);
-        dto.put("completedTasks", 0);
+        dto.put("totalTasks",     taskRepository.countByProjectId(p.getId()));
+        dto.put("completedTasks", taskRepository.countByProjectIdAndDone(p.getId(), true));
 
         return dto;
     }

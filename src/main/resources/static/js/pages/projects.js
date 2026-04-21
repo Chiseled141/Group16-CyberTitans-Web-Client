@@ -274,34 +274,35 @@ async function submitCreateProject() {
     }
 }
 
-function _renderProjectModal(p, body) {
+function _renderTaskList(tasks, projectId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    const isLoggedIn = !!token;
+    const items = tasks.map(t => `
+        <div id="task-row-${t.id}" class="flex items-center gap-3 py-2.5 border-b border-white/5 group">
+            <button onclick="toggleTask(${projectId}, ${t.id}, ${!t.done})"
+                class="w-5 h-5 border flex-shrink-0 flex items-center justify-center transition-all
+                       ${t.done ? 'bg-primary border-primary' : 'border-white/20 hover:border-primary/60'}">
+                ${t.done ? '<span class="material-symbols-outlined text-black text-[13px]">check</span>' : ''}
+            </button>
+            <span class="flex-1 font-mono text-xs ${t.done ? 'line-through text-gray-600' : 'text-gray-300'}">${t.title}</span>
+            ${isLoggedIn ? `<button onclick="deleteTask(${projectId}, ${t.id})"
+                class="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all">
+                <span class="material-symbols-outlined text-[14px]">close</span>
+            </button>` : ''}
+        </div>`).join('');
+    return items || '<p class="font-mono text-[10px] text-gray-600 text-center py-4 uppercase tracking-widest">No tasks yet</p>';
+}
+
+function _renderProjectModal(p, tasks, body) {
     const st = _projectStatusTag(p.status);
     const techTags = (p.techStack || []).map(t =>
         `<span class="tag-secondary pf-skill-tag">${t}</span>`
     ).join('');
-    const contributions = p.contributions || p.members || [];
-    const rows = contributions.map(c => {
-        const tasksCompleted = c.tasksCompleted ?? c.completedTasks ?? 0;
-        const totalTasks     = c.totalTasks ?? 0;
-        const pct = totalTasks ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
-        const name = c.memberName ?? c.name ?? '?';
-        return `
-            <div class="bg-[#111] border border-white/5 p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-[#1a1a1a] border border-white/10 flex items-center justify-center font-headline font-bold text-primary text-sm">${name.charAt(0).toUpperCase()}</div>
-                        <div>
-                            <p class="text-white font-bold text-sm">${name}</p>
-                            <p class="font-mono text-[10px] text-gray-500 uppercase">${c.role || ''}</p>
-                        </div>
-                    </div>
-                    <span class="font-mono text-xs text-primary">${tasksCompleted} / ${totalTasks} tasks</span>
-                </div>
-                <div class="skill-bar">
-                    <div class="skill-bar-fill verified" style="width:0%" data-w="${pct}"></div>
-                </div>
-            </div>`;
-    }).join('');
+    const total = tasks.length;
+    const done  = tasks.filter(t => t.done).length;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+
     body.innerHTML = `
         <div class="flex items-start justify-between mb-3">
             <h3 class="font-headline text-2xl font-bold text-white">${p.name}</h3>
@@ -309,19 +310,36 @@ function _renderProjectModal(p, body) {
         </div>
         <p class="font-mono text-xs text-gray-500 mb-4 leading-relaxed">${p.description || ''}</p>
         <div class="flex flex-wrap gap-2 mb-6">${techTags}</div>
-        <div class="mb-5">
+
+        <!-- Progress -->
+        <div class="mb-6">
             <div class="flex justify-between font-mono text-[10px] mb-1 text-gray-500">
-                <span>OVERALL PROGRESS</span><span>${p.completedTasks || 0} / ${p.totalTasks || 0} tasks</span>
+                <span>OVERALL PROGRESS</span>
+                <span id="task-count-label">${done} / ${total} tasks</span>
             </div>
             <div class="skill-bar">
-                <div class="skill-bar-fill verified" style="width:0%" data-w="${p.totalTasks ? Math.round((p.completedTasks / p.totalTasks) * 100) : 0}"></div>
+                <div id="task-progress-bar" class="skill-bar-fill verified" style="width:0%" data-w="${pct}"></div>
             </div>
         </div>
+
+        <!-- Task list -->
         <div class="flex items-center gap-2 mb-3">
             <div class="w-3 h-3 bg-primary"></div>
-            <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Member Contributions</span>
+            <span class="font-mono text-[10px] uppercase tracking-widest text-primary">Tasks</span>
         </div>
-        <div class="space-y-3">${rows || '<p class="font-mono text-xs text-gray-500 text-center py-4">No contribution data yet.</p>'}</div>`;
+        <div id="task-list" class="mb-4">${_renderTaskList(tasks, p.id)}</div>
+
+        ${token ? `
+        <div class="flex gap-2">
+            <input id="new-task-input" type="text" placeholder="Add a task..."
+                class="flex-1 bg-[#0a0a0a] border border-white/10 text-white font-mono text-xs px-3 py-2.5 outline-none focus:border-primary/60 placeholder:text-gray-600"
+                onkeydown="if(event.key==='Enter') addTask(${p.id})"/>
+            <button onclick="addTask(${p.id})"
+                class="px-4 py-2.5 bg-primary text-black font-mono text-[10px] font-bold uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">add</span> Add
+            </button>
+        </div>` : ''}`;
+
     _animateProgressBars(body);
 }
 
@@ -330,13 +348,73 @@ async function openProjectModal(id) {
     const body = document.getElementById('project-analytics-body');
     body.innerHTML = `<p class="font-mono text-xs text-gray-500 animate-pulse text-center py-10 uppercase tracking-widest">Loading data...</p>`;
     try {
-        const response = await fetch(`${API_BASE_URL}/projects/${id}`);
-        if (!response.ok) throw new Error('not found');
-        const p = await response.json();
-        _renderProjectModal(p, body);
+        const [projRes, taskRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/projects/${id}`),
+            fetch(`${API_BASE_URL}/projects/${id}/tasks`)
+        ]);
+        if (!projRes.ok) throw new Error('not found');
+        const p     = await projRes.json();
+        const tasks = taskRes.ok ? await taskRes.json() : [];
+        _renderProjectModal(p, tasks, body);
     } catch {
         body.innerHTML = `<p class="font-mono text-xs text-red-400 text-center py-10">[ Failed to load project data ]</p>`;
     }
+}
+
+async function addTask(projectId) {
+    const input = document.getElementById('new-task-input');
+    const title = input?.value.trim();
+    if (!title) return;
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/projects/${projectId}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ title })
+        });
+        if (!res.ok) { showToast('Failed to add task', 'error'); return; }
+        input.value = '';
+        await _refreshTaskList(projectId);
+    } catch { showToast('Connection failed', 'error'); }
+}
+
+async function toggleTask(projectId, taskId, done) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        await fetch(`${API_BASE_URL}/projects/${projectId}/tasks/${taskId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ done })
+        });
+        await _refreshTaskList(projectId);
+    } catch { showToast('Connection failed', 'error'); }
+}
+
+async function deleteTask(projectId, taskId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        await fetch(`${API_BASE_URL}/projects/${projectId}/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        await _refreshTaskList(projectId);
+    } catch { showToast('Connection failed', 'error'); }
+}
+
+async function _refreshTaskList(projectId) {
+    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/tasks`);
+    const tasks = res.ok ? await res.json() : [];
+    const list = document.getElementById('task-list');
+    if (list) list.innerHTML = _renderTaskList(tasks, projectId);
+    const total = tasks.length;
+    const done  = tasks.filter(t => t.done).length;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
+    const label = document.getElementById('task-count-label');
+    const bar   = document.getElementById('task-progress-bar');
+    if (label) label.textContent = `${done} / ${total} tasks`;
+    if (bar)   { bar.dataset.w = pct; bar.style.width = pct + '%'; }
+    // Refresh the card progress bars in the background
+    buildProjects();
 }
 
 let _selectedProjectId = null;
