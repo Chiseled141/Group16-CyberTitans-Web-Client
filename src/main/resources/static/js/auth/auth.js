@@ -99,6 +99,12 @@ async function doLogin() {
             
             closeModal('login-modal'); applyLoginState(userData);
             showToast(`ACCESS GRANTED. Welcome, ${userData.name}!`, 'success');
+            const _today = new Date().toDateString();
+            const _lastBonus = localStorage.getItem('last_daily_bonus');
+            if (_lastBonus !== _today) {
+                localStorage.setItem('last_daily_bonus', _today);
+                await _addCoinsToSelf(20, 'daily login');
+            }
             userEl.value = ''; passEl.value = '';
         } else { showToast('ACCESS DENIED: Invalid credentials.', 'error'); }
     } catch (err) { showToast('SERVER ERROR: Connection failed.', 'error'); }

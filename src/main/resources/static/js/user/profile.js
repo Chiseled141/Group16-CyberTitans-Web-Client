@@ -170,6 +170,11 @@ async function saveAccountProfile() {
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
             applyLoginState(currentUser);
+            const _bonusKey = `profile_bonus_claimed_${currentUser.id}`;
+            if (!localStorage.getItem(_bonusKey)) {
+                localStorage.setItem(_bonusKey, '1');
+                await _addCoinsToSelf(100, 'completing your profile');
+            }
         } else { showToast('Error: Permission denied.', 'error'); }
     } catch (error) { showToast('Server error.', 'error'); }
 }

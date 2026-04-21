@@ -221,7 +221,8 @@ async function declineRequest(reqId) {
         const req = (_cachedRequests || []).find(r => String(r.id) === String(reqId));
         const name = req ? req.menteeName : 'Mentee';
         _cachedRequests = null;
-        showToast(`Request from ${name} declined.`, 'success');
+        await _addCoinsToSelf(-50, 'declining a mentee request');
+        showToast(`Request from ${name} declined. −50 Coins.`, 'success');
         await _updateInboxBadge();
         showMentorHubTab('inbox');
     } catch { showToast('Failed to decline request', 'error'); }
