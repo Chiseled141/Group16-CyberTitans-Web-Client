@@ -37,9 +37,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(ex -> ex
                     .authenticationEntryPoint((request, response, authException) -> {
-                        response.setStatus(401);
-                        response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        String path = request.getRequestURI();
+                        if (path.startsWith("/api/")) {
+                            response.setStatus(401);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Unauthorized\"}");
+                        } else {
+                            response.sendRedirect("/error");
+                        }
                     })
                 )
                 .authorizeHttpRequests(auth -> auth
@@ -47,6 +52,8 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         // Static resources
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                        // Error page
+                        .requestMatchers("/error").permitAll()
                         // Page routes
                         .requestMatchers(HttpMethod.GET, "/").permitAll()
                         .requestMatchers(HttpMethod.GET, "/pages/**").permitAll()
