@@ -74,7 +74,7 @@ function _buildProjectCard(p) {
         <div class="flex gap-2 mt-2">
             <button onclick="openEditProjectModal(${p.id})"
                 class="flex-1 text-primary font-mono text-[10px] uppercase border border-primary/20 px-3 py-2 hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-1">
-                <span class="material-symbols-outlined text-[13px]">edit</span> Edit
+                <span class="material-symbols-outlined text-[13px]">desktop_windows</span> Edit
             </button>
             <button onclick="deleteProject(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}' )"
                 class="flex-1 text-red-400 font-mono text-[10px] uppercase border border-red-500/30 px-3 py-2 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-1">
