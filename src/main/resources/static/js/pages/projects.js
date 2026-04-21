@@ -213,17 +213,23 @@ async function submitEditProject() {
     } catch { showToast('Connection failed', 'error'); }
 }
 
-async function deleteProject(id, name) {
-    if (!confirm(`Delete project "${name}"? This cannot be undone.`)) return;
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
-    try {
-        const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) { showToast('Project deleted.', 'success'); buildProjects(); }
-        else showToast('Failed to delete project', 'error');
-    } catch { showToast('Connection failed', 'error'); }
+function deleteProject(id, name) {
+    const label = document.getElementById('confirm-delete-label');
+    if (label) label.textContent = `"${name}" will be permanently removed. This cannot be undone.`;
+    const btn = document.getElementById('confirm-delete-btn');
+    if (btn) btn.onclick = async () => {
+        closeModal('confirm-delete-modal');
+        const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+        try {
+            const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) { showToast('Project deleted.', 'success'); buildProjects(); }
+            else showToast('Failed to delete project', 'error');
+        } catch { showToast('Connection failed', 'error'); }
+    };
+    openModal('confirm-delete-modal');
 }
 
 async function submitCreateProject() {
