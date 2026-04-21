@@ -48,6 +48,7 @@ public class ProjectController {
             p.setCategoryId(1);
             p.setTeamId(creator.getId().toString());
             p.setUserId(creator.getId());
+            if (body.containsKey("githubUrl")) p.setDemoUrl(body.get("githubUrl").toString());
             p.setPrice(java.math.BigDecimal.ZERO);
             p.setCoinPrice(0);
             p.setCurrencyUnit("USD");
@@ -93,6 +94,7 @@ public class ProjectController {
                 if (body.containsKey("name"))        p.setName(body.get("name").toString());
                 if (body.containsKey("description")) p.setDescription(body.get("description").toString());
                 if (body.containsKey("techStack"))   p.setTechnologies(String.join(",", (List<String>) body.get("techStack")));
+                if (body.containsKey("githubUrl"))   p.setDemoUrl(body.get("githubUrl").toString());
                 p.setUpdatedAt(LocalDateTime.now());
                 projectRepository.save(p);
                 return ResponseEntity.ok(toDto(p, false));
@@ -131,6 +133,7 @@ public class ProjectController {
         dto.put("name",        p.getName());
         dto.put("description", p.getDescription());
         dto.put("image",       p.getImage());
+        dto.put("githubUrl",   p.getDemoUrl());
         dto.put("status",      p.getStatus() == 1 ? "ACTIVE" : "INACTIVE");
         dto.put("publishedAt", p.getPublishedAt());
         dto.put("coinPrice",   p.getCoinPrice());
