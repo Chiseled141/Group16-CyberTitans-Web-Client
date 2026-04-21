@@ -66,6 +66,22 @@ function _buildProjectCard(p) {
             <span class="font-mono text-[10px] text-gray-400 flex-1 truncate">${m.memberName}</span>
             <span class="tag-tertiary pf-skill-tag">${m.role}</span>
         </div>`).join('');
+
+    const savedUser = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const currentUser = savedUser ? JSON.parse(savedUser) : null;
+    const isOwner = currentUser && String(currentUser.id) === String(p.userId);
+    const ownerActions = isOwner ? `
+        <div class="flex gap-2 mt-2">
+            <button onclick="openEditProjectModal(${p.id})"
+                class="flex-1 text-primary font-mono text-[10px] uppercase border border-primary/20 px-3 py-2 hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[13px]">edit</span> Edit
+            </button>
+            <button onclick="deleteProject(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}' )"
+                class="flex-1 text-red-400 font-mono text-[10px] uppercase border border-red-500/30 px-3 py-2 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-1">
+                <span class="material-symbols-outlined text-[13px]">delete</span> Delete
+            </button>
+        </div>` : '';
+
     return `
         <div class="hack-card p-6 card-lift flex flex-col">
             <div class="scanner"></div>
@@ -91,6 +107,7 @@ function _buildProjectCard(p) {
                 <button onclick="openProjectModal(${p.id})" class="w-full text-primary font-mono text-[10px] uppercase border border-primary/20 px-4 py-2 hover:bg-primary hover:text-black transition-all">
                     View Project
                 </button>
+                ${ownerActions}
             </div>
         </div>`;
 }
@@ -127,14 +144,76 @@ async function buildProjects() {
     }
 }
 
+let _editingProjectId = null;
+
 function openCreateProjectModal() {
+    _editingProjectId = null;
     ['cp-name','cp-description','cp-tech','cp-total-tasks'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
     const status = document.getElementById('cp-status');
     if (status) status.value = 'ACTIVE';
+    const title = document.getElementById('cp-modal-title');
+    if (title) title.textContent = 'NEW_PROJECT.EXE';
+    const btn = document.getElementById('cp-submit-btn');
+    if (btn) { btn.textContent = ''; btn.innerHTML = 'Deploy Project <span class="material-symbols-outlined text-lg">rocket_launch</span>'; btn.onclick = submitCreateProject; }
     openModal('create-project-modal');
+}
+
+async function openEditProjectModal(id) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/projects/${id}`);
+        if (!res.ok) { showToast('Failed to load project', 'error'); return; }
+        const p = await res.json();
+        _editingProjectId = id;
+        const el = (eid) => document.getElementById(eid);
+        if (el('cp-name'))        el('cp-name').value = p.name || '';
+        if (el('cp-description')) el('cp-description').value = p.description || '';
+        if (el('cp-tech'))        el('cp-tech').value = (p.techStack || []).join(', ');
+        if (el('cp-total-tasks')) el('cp-total-tasks').value = p.totalTasks || 0;
+        const title = document.getElementById('cp-modal-title');
+        if (title) title.textContent = 'EDIT_PROJECT.EXE';
+        const btn = document.getElementById('cp-submit-btn');
+        if (btn) { btn.innerHTML = 'Save Changes <span class="material-symbols-outlined text-lg">save</span>'; btn.onclick = submitEditProject; }
+        openModal('create-project-modal');
+    } catch { showToast('Failed to load project', 'error'); }
+}
+
+async function submitEditProject() {
+    const name        = document.getElementById('cp-name')?.value.trim();
+    const description = document.getElementById('cp-description')?.value.trim();
+    const techRaw     = document.getElementById('cp-tech')?.value.trim();
+    if (!name) { showToast('Project name is required', 'error'); return; }
+
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/projects/${_editingProjectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                name,
+                description,
+                techStack: techRaw ? techRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+            })
+        });
+        closeModal('create-project-modal');
+        if (res.ok) { showToast('Project updated!', 'success'); buildProjects(); }
+        else showToast('Failed to update project', 'error');
+    } catch { showToast('Connection failed', 'error'); }
+}
+
+async function deleteProject(id, name) {
+    if (!confirm(`Delete project "${name}"? This cannot be undone.`)) return;
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) { showToast('Project deleted.', 'success'); buildProjects(); }
+        else showToast('Failed to delete project', 'error');
+    } catch { showToast('Connection failed', 'error'); }
 }
 
 async function submitCreateProject() {

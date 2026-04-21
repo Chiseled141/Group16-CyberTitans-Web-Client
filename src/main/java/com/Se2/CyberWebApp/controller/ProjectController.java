@@ -76,9 +76,58 @@ public class ProjectController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/projects/{id}")
+    public ResponseEntity<?> updateProject(@PathVariable Integer id,
+                                           @RequestBody Map<String, Object> body,
+                                           @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            User requester = userRepository.findByUsername(username).orElse(null);
+            if (requester == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+            return projectRepository.findById(id).map(p -> {
+                if (!p.getUserId().equals(requester.getId()))
+                    return ResponseEntity.status(403).<Object>body(Map.of("message", "Forbidden"));
+
+                if (body.containsKey("name"))        p.setName(body.get("name").toString());
+                if (body.containsKey("description")) p.setDescription(body.get("description").toString());
+                if (body.containsKey("techStack"))   p.setTechnologies(String.join(",", (List<String>) body.get("techStack")));
+                p.setUpdatedAt(LocalDateTime.now());
+                projectRepository.save(p);
+                return ResponseEntity.ok(toDto(p, false));
+            }).orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to update project"));
+        }
+    }
+
+    @DeleteMapping("/projects/{id}")
+    public ResponseEntity<?> deleteProject(@PathVariable Integer id,
+                                           @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            User requester = userRepository.findByUsername(username).orElse(null);
+            if (requester == null) return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+            return projectRepository.findById(id).map(p -> {
+                if (!p.getUserId().equals(requester.getId()))
+                    return ResponseEntity.status(403).<Object>body(Map.of("message", "Forbidden"));
+                p.setStatus((short) 0);
+                p.setUpdatedAt(LocalDateTime.now());
+                projectRepository.save(p);
+                return ResponseEntity.ok(Map.of("message", "Project deleted"));
+            }).orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Failed to delete project"));
+        }
+    }
+
     private Map<String, Object> toDto(Project p, boolean includeDetail) {
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id",          p.getId());
+        dto.put("userId",      p.getUserId());
         dto.put("name",        p.getName());
         dto.put("description", p.getDescription());
         dto.put("image",       p.getImage());
