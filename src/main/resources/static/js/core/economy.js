@@ -158,7 +158,7 @@ async function _addCoinsToSelf(amount, reason) {
     const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
     if (!savedUserStr || !token) return;
     const currentUser = JSON.parse(savedUserStr);
-    const newBalance = (currentUser.coin || 0) + amount;
+    const newBalance = Math.max(0, (currentUser.coin || 0) + amount);
     try {
         const res = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
             method: 'PUT',
@@ -170,7 +170,7 @@ async function _addCoinsToSelf(amount, reason) {
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
             applyLoginState(currentUser);
-            showToast(`+${amount} Coins earned for ${reason}!`, 'success');
+            if (amount > 0) showToast(`+${amount} Coins earned for ${reason}!`, 'success');
         }
     } catch { /* silent — reward is best-effort */ }
 }

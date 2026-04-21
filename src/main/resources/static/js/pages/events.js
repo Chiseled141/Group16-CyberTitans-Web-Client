@@ -45,7 +45,7 @@ function _getJoinedEvents() {
     try { return JSON.parse(localStorage.getItem('joined_events') || '[]'); } catch { return []; }
 }
 
-function joinEvent(eventId) {
+async function joinEvent(eventId) {
     const savedUser = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
     if (!savedUser) { showToast('Please log in to join events.', 'error'); openModal('login-modal'); return; }
     const joined = _getJoinedEvents();
@@ -53,13 +53,15 @@ function joinEvent(eventId) {
     joined.push(eventId);
     localStorage.setItem('joined_events', JSON.stringify(joined));
     showToast('Successfully joined! See you there.', 'success');
+    await _addCoinsToSelf(30, 'joining an event');
     _renderEvents();
 }
 
-function leaveEvent(eventId) {
+async function leaveEvent(eventId) {
     const joined = _getJoinedEvents().filter(id => id !== eventId);
     localStorage.setItem('joined_events', JSON.stringify(joined));
-    showToast('Event registration cancelled.', 'success');
+    await _addCoinsToSelf(-30, 'cancelling event registration');
+    showToast('Event registration cancelled. −30 Coins.', 'success');
     _renderEvents();
 }
 
