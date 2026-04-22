@@ -2,6 +2,7 @@ package com.Se2.CyberWebApp.controller;
 
 import com.Se2.CyberWebApp.dto.LoginDTO;
 import com.Se2.CyberWebApp.entity.User;
+import com.Se2.CyberWebApp.repository.TeamRepository;
 import com.Se2.CyberWebApp.repository.UserRepository;
 import com.Se2.CyberWebApp.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -52,6 +56,9 @@ public class AuthController {
             response.put("name", user.getName());
             response.put("role", user.getRoleEntity() != null ? user.getRoleEntity().getName() : "MEMBER");
             response.put("coin", user.getCoin());
+            boolean roleMentor = user.getRoleEntity() != null &&
+                user.getRoleEntity().getName().toLowerCase().contains("mentor");
+            response.put("isMentor", teamRepository.findByUserId(user.getId()).isPresent() || roleMentor);
 
             return ResponseEntity.ok(response);
         } else {

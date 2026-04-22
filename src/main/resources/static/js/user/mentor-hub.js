@@ -104,12 +104,27 @@ async function showMentorHubTab(tab) {
             </div>`).join('');
 
     } else if (tab === 'skills') {
-        const currentSkills = (currentUser.experiences || []).map(e => e.name).filter(Boolean);
+        // Fetch live experience tags from the API
+        const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+        let currentSkills = JSON.parse(localStorage.getItem(`mentor_skills_${currentUser.id}`) || 'null');
+        if (!currentSkills) {
+            try {
+                const r = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (r.ok) {
+                    const data = await r.json();
+                    const allTags = (data.experiences || [])
+                        .flatMap(e => (e.tags || '').split(',').map(t => t.trim()).filter(Boolean));
+                    currentSkills = [...new Set(allTags)];
+                    localStorage.setItem(`mentor_skills_${currentUser.id}`, JSON.stringify(currentSkills));
+                }
+            } catch {}
+        }
+        currentSkills = currentSkills || [];
         const skillChips = currentSkills.length
             ? currentSkills.map(s => `
                 <span class="inline-flex items-center gap-1.5 tag-primary pf-skill-tag">
                     ${s}
-                    <button onclick="removeMentorSkill('${s}')" class="text-primary hover:text-red-400 transition-colors leading-none">&times;</button>
+                    <button onclick="removeMentorSkill('${s.replace(/'/g,"\\'")}', ${currentUser.id})" class="text-primary hover:text-red-400 transition-colors leading-none">&times;</button>
                 </span>`).join('')
             : '<p class="font-mono text-xs text-gray-500 italic">No skills listed yet.</p>';
 
@@ -264,12 +279,7 @@ function submitGuidance() {
     showMentorHubTab('guide');
 }
 
-function _getMentorSkills() {
-    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    if (!savedUserStr) return [];
-    const u = JSON.parse(savedUserStr);
-    return (u.experiences || []).map(e => e.name).filter(Boolean);
-}
+function _getMentorSkillsKey(uid) { return `mentor_skills_${uid}`; }
 
 function addMentorSkill() {
     const input = document.getElementById('mentor-skill-input');
@@ -278,40 +288,28 @@ function addMentorSkill() {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
     if (!savedUserStr) return;
     const u = JSON.parse(savedUserStr);
-    const skills = (u.experiences || []).map(e => e.name).filter(Boolean);
+    const key = _getMentorSkillsKey(u.id);
+    const skills = JSON.parse(localStorage.getItem(key) || '[]');
     if (skills.includes(skill)) { showToast('Skill already added', 'error'); return; }
     skills.push(skill);
-    u.experiences = skills.map(s => ({ name: s }));
-    const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
-    storage.setItem('cyber_user', JSON.stringify(u));
+    localStorage.setItem(key, JSON.stringify(skills));
     input.value = '';
     showMentorHubTab('skills');
 }
 
-function removeMentorSkill(skill) {
-    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    if (!savedUserStr) return;
-    const u = JSON.parse(savedUserStr);
-    u.experiences = (u.experiences || []).filter(e => e.name !== skill);
-    const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
-    storage.setItem('cyber_user', JSON.stringify(u));
+function removeMentorSkill(skill, uid) {
+    const key = _getMentorSkillsKey(uid);
+    const skills = JSON.parse(localStorage.getItem(key) || '[]').filter(s => s !== skill);
+    localStorage.setItem(key, JSON.stringify(skills));
     showMentorHubTab('skills');
 }
 
 async function saveMentorSkills() {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
-    if (!savedUserStr || !token) return showToast('Session expired. Please log in again.', 'error');
+    if (!savedUserStr) return showToast('Session expired. Please log in again.', 'error');
     const u = JSON.parse(savedUserStr);
-    try {
-        const res = await fetch(`${API_BASE_URL}/team/members/${u.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ name: u.name, email: u.email, experiences: u.experiences || [] })
-        });
-        if (res.ok) showToast('Skills updated successfully!', 'success');
-        else showToast('Skills saved locally.', 'success');
-    } catch { showToast('Skills saved locally.', 'success'); }
+    const skills = JSON.parse(localStorage.getItem(_getMentorSkillsKey(u.id)) || '[]');
+    showToast(`${skills.length} skills saved locally.`, 'success');
 }
 
 async function _updateInboxBadge() {

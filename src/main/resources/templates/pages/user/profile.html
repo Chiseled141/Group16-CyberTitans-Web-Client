@@ -47,7 +47,7 @@
           <h3 class="font-headline text-lg font-bold uppercase tracking-tight mb-6 flex items-center gap-4"><span class="w-2 h-2 bg-primary"></span>Identity Data</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div><label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Full Name</label><input type="text" id="input-name" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2"/></div>
-            <div><label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Username</label><input type="text" id="input-username" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2" disabled placeholder="Can't be changed"/></div>
+            <div><label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Username</label><input type="text" id="input-username" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2" placeholder="Enter username"/></div>
             <div><label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Email</label><input type="email" id="input-email" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2"/></div>
             <div><label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Phone</label><input type="tel" id="input-phone" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2"/></div>
           </div>
@@ -64,6 +64,35 @@
             <button onclick="addTag()" class="px-4 py-2 bg-surface-container border border-outline-variant/30 text-[11px] font-mono hover:bg-primary hover:text-black hover:border-primary transition-all">+ Add Tag</button>
           </div>
         </div>
+        <div>
+          <h3 class="font-headline text-lg font-bold uppercase tracking-tight mb-6 flex items-center gap-4"><span class="w-2 h-2 bg-secondary"></span>Links &amp; Social</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">GitHub</label>
+              <input type="url" id="input-github" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2" placeholder="https://github.com/username"/>
+            </div>
+            <div>
+              <label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">LinkedIn</label>
+              <input type="url" id="input-linkedin" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2" placeholder="https://linkedin.com/in/username"/>
+            </div>
+            <div>
+              <label class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest block mb-2">Personal Website</label>
+              <input type="url" id="input-website" class="data-input w-full bg-black border border-white/20 text-white font-mono p-2" placeholder="https://yoursite.com"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MY MENTOR REQUESTS ─────────────────────────────────────── -->
+    <div id="my-requests-section" class="hidden mt-16 pt-10 border-t border-white/5">
+      <h3 class="font-headline text-lg font-bold uppercase tracking-tight mb-6 flex items-center gap-4">
+        <span class="w-2 h-2 bg-yellow-400"></span>
+        My Mentor Requests
+        <span id="requests-new-badge" class="hidden font-mono text-[9px] font-bold tracking-widest px-2 py-0.5 bg-primary text-black">NEW</span>
+      </h3>
+      <div id="my-requests-list" class="space-y-3">
+        <p class="font-mono text-xs text-gray-500">Loading...</p>
       </div>
     </div>
   </div>
@@ -138,6 +167,7 @@
             <span id="portfolio-role-tag" class="tag-primary px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-widest shrink-0">
               MEMBER
             </span>
+            <span id="portfolio-mentor-badge" class="hidden font-mono text-[9px] font-bold tracking-widest px-2 py-0.5 border border-tertiary/50 text-tertiary">MENTOR</span>
           </div>
           <p class="font-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
             UID#<span id="portfolio-uid">------</span>&nbsp;&nbsp;·&nbsp;&nbsp;<span id="portfolio-clearance-line">ROLE: MEMBER</span>
@@ -145,6 +175,7 @@
           <p id="portfolio-bio" class="font-mono text-xs text-on-surface-variant leading-relaxed max-w-xl hidden sm:block">
             No briefing notes on file.
           </p>
+          <div id="portfolio-social-links" class="hidden sm:flex items-center gap-3 mt-1.5 flex-wrap"></div>
         </div>
 
         <!-- Action buttons -->
@@ -302,6 +333,17 @@
       <div id="pf-contributions-container" class="space-y-3">
         <span class="font-mono text-[10px] text-on-surface-variant italic">Loading...</span>
       </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         §6  EDUCATION
+    ═══════════════════════════════════════════════════════════ -->
+    <section id="pf-education-section" class="hidden">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="inline-block w-8 h-px bg-gold/50"></span>
+        <p class="font-mono text-[10px] text-gold uppercase tracking-[0.25em]">EDUCATION</p>
+      </div>
+      <div id="pf-education-container" class="space-y-4"></div>
     </section>
 
   </div><!-- /max-w-5xl -->

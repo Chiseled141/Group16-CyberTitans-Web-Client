@@ -16,8 +16,10 @@ async function checkLoginState() {
         });
         if (!res.ok) return;
         const fresh = await res.json();
-        if (fresh.coin !== undefined && fresh.coin !== user.coin) {
-            user.coin = fresh.coin;
+        let changed = false;
+        if (fresh.coin !== undefined && fresh.coin !== user.coin)         { user.coin = fresh.coin; changed = true; }
+        if (fresh.isMentor !== undefined && fresh.isMentor !== user.isMentor) { user.isMentor = fresh.isMentor; changed = true; }
+        if (changed) {
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(user));
             applyLoginState(user);
@@ -59,11 +61,19 @@ function applyLoginState(userData) {
             joinBtn.onclick = () => showPage('my-profile');
         }
 
-        // Show Mentor Hub link only for MENTOR role
+        // Show Mentor Hub link and role badge based on isMentor flag
         const mentorHubLink = document.getElementById('nav-mentor-hub-link');
-        if (mentorHubLink) {
-            const isMentor = (userData.role || '').toUpperCase() === 'MENTOR';
-            mentorHubLink.classList.toggle('hidden', !isMentor);
+        if (mentorHubLink) mentorHubLink.classList.toggle('hidden', !userData.isMentor);
+
+        const roleBadge = document.getElementById('nav-role-badge');
+        if (roleBadge) {
+            if (userData.isMentor) {
+                roleBadge.textContent = 'MENTOR';
+                roleBadge.className = 'font-mono text-[9px] font-bold tracking-widest px-1.5 py-0.5 border text-tertiary border-tertiary/50';
+            } else {
+                roleBadge.textContent = 'MENTEE';
+                roleBadge.className = 'font-mono text-[9px] font-bold tracking-widest px-1.5 py-0.5 border text-secondary border-secondary/50';
+            }
         }
 
         // Show add buttons now that user is logged in
@@ -71,6 +81,10 @@ function applyLoginState(userData) {
         if (projectBtn) projectBtn.classList.replace('hidden', 'flex');
         const pubBtn = document.getElementById('create-publication-btn');
         if (pubBtn) pubBtn.classList.replace('hidden', 'flex');
+
+        // Hide the "Join CyberTitans Today" CTA when already logged in
+        const ctaJoin = document.getElementById('cta-join-section');
+        if (ctaJoin) ctaJoin.style.display = 'none';
     }
 }
 

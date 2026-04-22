@@ -20,10 +20,12 @@ async function buildMentorList(skillFilter) {
             if (!membersRes.ok) throw new Error();
             const members = await membersRes.json();
             const ranking = (rankRes && rankRes.ok) ? await rankRes.json() : [];
-            _mentorCache = members.map(m => {
-                const rankEntry = ranking.find(r => r.name === m.name);
-                return { ...m, reputationScore: rankEntry ? (rankEntry.point || 0) : 0 };
-            }).sort((a, b) => b.reputationScore - a.reputationScore);
+            _mentorCache = members
+                .filter(m => m.isMentor)
+                .map(m => {
+                    const rankEntry = ranking.find(r => r.name === m.name);
+                    return { ...m, reputationScore: rankEntry ? (rankEntry.point || 0) : 0 };
+                }).sort((a, b) => b.reputationScore - a.reputationScore);
         }
 
         const members = skillFilter === 'RECOMMENDED'
@@ -31,7 +33,7 @@ async function buildMentorList(skillFilter) {
             : (skillFilter && skillFilter !== 'ALL')
                 ? _mentorCache.filter(m =>
                     (m.experiences || []).some(e =>
-                        (e.name || '').toLowerCase().includes(skillFilter.toLowerCase())
+                        (e.tags || '').toLowerCase().includes(skillFilter.toLowerCase())
                     )
                   )
                 : _mentorCache;
@@ -42,8 +44,11 @@ async function buildMentorList(skillFilter) {
         }
 
         container.innerHTML = members.map((m, i) => {
-            const skills   = (m.experiences || []).slice(0, 4).map(e =>
-                `<span class="tag-secondary pf-skill-tag">${e.name || ''}</span>`
+            const allTags = (m.experiences || [])
+                .flatMap(e => (e.tags || '').split(',').map(t => t.trim()).filter(Boolean));
+            const uniqueTags = [...new Set(allTags)].slice(0, 5);
+            const skills = uniqueTags.map(t =>
+                `<span class="tag-secondary pf-skill-tag">${t}</span>`
             ).join('');
             const repColor = i === 0 ? 'text-[#fbbf24]' : i === 1 ? 'text-[#e5e7eb]' : i === 2 ? 'text-[#f97316]' : 'text-primary';
             const repLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;

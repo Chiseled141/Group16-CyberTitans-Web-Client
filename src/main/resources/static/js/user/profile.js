@@ -15,15 +15,25 @@ async function loadOperativeData() {
             if (document.getElementById('input-email')) document.getElementById('input-email').value = user.email || '';
             if (document.getElementById('input-phone')) document.getElementById('input-phone').value = user.phone || '';
             if (document.getElementById('input-bio')) document.getElementById('input-bio').value = user.description || '';
-            if (document.getElementById('input-username')) document.getElementById('input-username').value = currentUser.username || "@unknown";
+            if (document.getElementById('input-username')) document.getElementById('input-username').value = currentUser.username || '';
             const roleEl = document.getElementById('profile-role');
             if (roleEl) roleEl.innerText = user.role || 'MEMBER';
+
+            // Load social links + bio from localStorage
+            const _lsKey = `profile_links_${currentUser.id}`;
+            const _saved = JSON.parse(localStorage.getItem(_lsKey) || '{}');
+            if (document.getElementById('input-github'))  document.getElementById('input-github').value  = _saved.github  || '';
+            if (document.getElementById('input-linkedin')) document.getElementById('input-linkedin').value = _saved.linkedin || '';
+            if (document.getElementById('input-website')) document.getElementById('input-website').value  = _saved.website  || '';
+            if (document.getElementById('input-bio') && _saved.bio) document.getElementById('input-bio').value = _saved.bio;
 
             // Load tags from experiences
             const tags = (user.experiences || []).map(e => e.name).filter(Boolean);
             _renderTags(tags);
         } else if (response.status === 403 || response.status === 401) { logout(); }
     } catch (error) { console.error("[SYSTEM] Error loading user data:", error); }
+
+    loadMyMentorRequests();
 }
 
 // ── Tag system ─────────────────────────────────────────────────────────────
@@ -150,12 +160,14 @@ async function saveAccountProfile() {
 
     const currentUser = JSON.parse(savedUserStr);
     const tags = _getTags();
+    const usernameVal = document.getElementById('input-username')?.value.trim();
     const payload = {
         name: document.getElementById('input-name').value,
         email: document.getElementById('input-email').value,
         phone: document.getElementById('input-phone').value,
         description: document.getElementById('input-bio').value,
-        experiences: tags.map(t => ({ name: t }))
+        experiences: tags.map(t => ({ name: t })),
+        ...(usernameVal ? { username: usernameVal } : {})
     };
 
     try {
@@ -165,8 +177,18 @@ async function saveAccountProfile() {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
+            // Persist social links + bio to localStorage (backend has no column for these)
+            const _lsKey = `profile_links_${currentUser.id}`;
+            localStorage.setItem(_lsKey, JSON.stringify({
+                bio:      document.getElementById('input-bio')?.value     || '',
+                github:   document.getElementById('input-github')?.value   || '',
+                linkedin: document.getElementById('input-linkedin')?.value || '',
+                website:  document.getElementById('input-website')?.value  || ''
+            }));
+
             showToast('Profile saved successfully.', 'success');
             currentUser.name = payload.name;
+            if (usernameVal) currentUser.username = usernameVal;
             const storage = localStorage.getItem('cyber_user') ? localStorage : sessionStorage;
             storage.setItem('cyber_user', JSON.stringify(currentUser));
             applyLoginState(currentUser);
@@ -175,8 +197,11 @@ async function saveAccountProfile() {
                 localStorage.setItem(_bonusKey, '1');
                 await _addCoinsToSelf(100, 'completing your profile');
             }
-        } else { showToast('Error: Permission denied.', 'error'); }
-    } catch (error) { showToast('Server error.', 'error'); }
+        } else {
+            const errData = await response.json().catch(() => ({}));
+            showToast(errData.message || 'Save failed. Try again.', 'error');
+        }
+    } catch (error) { showToast('Server error. Check your connection.', 'error'); }
 }
 
 async function openProfileModal(id) {
@@ -320,6 +345,52 @@ async function openProfileModal(id) {
             }
         } catch {}
 
+        // --- Mentor profile hero (only for mentor accounts) ---
+        let mentorHeroHTML = '';
+        if (user.isMentor) {
+            // Skill tags from all experiences
+            const allSkillTags = (user.experiences || [])
+                .flatMap(e => (e.tags || '').split(',').map(t => t.trim()).filter(Boolean));
+            const uniqueSkills = [...new Set(allSkillTags)].slice(0, 8);
+            const skillPillsHTML = uniqueSkills.map(t =>
+                `<span class="font-mono text-[9px] uppercase tracking-wider px-2 py-1 border border-tertiary/40 text-tertiary/90 bg-tertiary/5">${t}</span>`
+            ).join('');
+
+            // Social links from team.social field (format: "platform:url@#platform:url")
+            const socialLinksHTML = (() => {
+                if (!user.mentorSocial) return '';
+                const icons = { github: '⌥', linkedin: 'in', facebook: 'f', youtube: '▶', twitter: 'X', website: '🌐' };
+                const links = user.mentorSocial.split('@#').map(s => {
+                    const colonIdx = s.indexOf(':');
+                    if (colonIdx === -1) return '';
+                    const platform = s.slice(0, colonIdx).toLowerCase().trim();
+                    const url = s.slice(colonIdx + 1).trim();
+                    if (!url.startsWith('http')) return '';
+                    const label = icons[platform] || platform.toUpperCase().slice(0, 2);
+                    return `<a href="${url}" target="_blank" rel="noopener" class="font-mono text-[9px] uppercase tracking-wider px-2.5 py-1.5 border border-white/10 text-gray-400 hover:border-primary/50 hover:text-primary transition-all">${label}</a>`;
+                }).join('');
+                return links ? `<div class="flex flex-wrap gap-2 mt-4">${links}</div>` : '';
+            })();
+
+            const rateText = user.mentorRate
+                ? `<span class="font-mono text-[10px] text-primary border border-primary/30 px-2 py-0.5">${user.mentorRate.toLocaleString()} ${user.mentorCurrency || 'COIN'} / hr</span>`
+                : '';
+
+            mentorHeroHTML = `
+                <div class="mb-8 p-6 bg-[#111] border border-tertiary/20 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-tertiary/50 to-transparent"></div>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="font-mono text-[9px] font-bold tracking-[0.25em] uppercase px-2 py-0.5 border text-tertiary border-tertiary/50 bg-tertiary/5">MENTOR</span>
+                        ${user.mentorTitle ? `<span class="font-mono text-[10px] text-gray-500">${user.mentorTitle}</span>` : ''}
+                        ${rateText}
+                    </div>
+                    ${user.mentorPosition ? `<p class="font-headline font-bold text-white text-lg mb-3">${user.mentorPosition}</p>` : ''}
+                    ${user.mentorBio ? `<p class="text-gray-400 text-sm leading-relaxed mb-4">${user.mentorBio}</p>` : ''}
+                    ${skillPillsHTML ? `<div class="flex flex-wrap gap-1.5 mb-2">${skillPillsHTML}</div>` : ''}
+                    ${socialLinksHTML}
+                </div>`;
+        }
+
         // --- RENDER  ---
         modalBody.innerHTML = `
             <div class="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-12 mt-4">
@@ -343,13 +414,15 @@ async function openProfileModal(id) {
                     </div>
                 </div>
                 <div>
+                    ${mentorHeroHTML}
                     <h2 class="text-3xl font-bold text-white mb-8 pb-4 border-b border-white/10">Experience</h2>
                     <div class="space-y-2">${experiencesHTML}</div>
                     ${educationHTML}
+                    ${!user.isMentor ? `
                     <div class="mt-10 pt-6 border-t border-white/5">
                          <h4 class="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-4">Briefing Notes</h4>
                          <p class="text-gray-400 text-sm leading-relaxed font-mono">${user.description || 'No additional logs found.'}</p>
-                    </div>
+                    </div>` : ''}
                 </div>
             </div>`;
 
@@ -406,6 +479,7 @@ async function loadPortfolioData() {
         _pfRenderSkills(user.experiences || []);
         _pfRenderTimeline(user.experiences || []);
         _pfRenderContributions(user);
+        _pfRenderEducation(currentUser.id, token);
 
     } catch (err) {
         console.error("[PORTFOLIO]", err);
@@ -417,7 +491,7 @@ async function loadPortfolioData() {
     }
 }
 
-/* §1 — populate hero: avatar, name, role tag, UID, clearance, bio */
+/* §1 — populate hero: avatar, name, role tag, UID, clearance, bio, social links */
 function _pfRenderHero(user) {
     const get = id => document.getElementById(id);
     const set = (id, v) => { const el = get(id); if (el) el.textContent = v; };
@@ -426,20 +500,55 @@ function _pfRenderHero(user) {
     const img = get('portfolio-avatar');
     if (img) img.src = user.avatar || defaultAvt;
 
-    set('portfolio-name',          user.name || 'UNKNOWN OPERATIVE');
-    set('portfolio-uid',           String(user.id || 0).padStart(6, '0'));
-    set('portfolio-bio',           user.description || 'No briefing notes on file.');
+    set('portfolio-name', user.name || 'UNKNOWN OPERATIVE');
+    set('portfolio-uid',  String(user.id || 0).padStart(6, '0'));
 
-    // Role tag colour: admins get .tag-tertiary (purple), everyone else .tag-primary (green)
+    // Bio from localStorage (backend has no description column)
+    const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
+    const currentUser  = savedUserStr ? JSON.parse(savedUserStr) : {};
+    const _lsKey = `profile_links_${currentUser.id}`;
+    const _saved = JSON.parse(localStorage.getItem(_lsKey) || '{}');
+    const bioEl = get('portfolio-bio');
+    if (bioEl) bioEl.textContent = _saved.bio || 'No briefing notes on file.';
+
+    // Role tag colour
     const roleTag = get('portfolio-role-tag');
     if (roleTag) {
-        const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER ADMIN';
+        const isAdmin = (user.role || '').toUpperCase().includes('ADMIN');
         roleTag.textContent = user.role || 'MEMBER';
         roleTag.className   = (isAdmin ? 'tag-tertiary' : 'tag-primary') +
                               ' px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-widest shrink-0';
     }
 
+    // MENTOR / MENTEE badge
+    const mentorBadge = get('portfolio-mentor-badge');
+    if (mentorBadge) {
+        if (user.isMentor) {
+            mentorBadge.textContent = 'MENTOR';
+            mentorBadge.className = 'font-mono text-[9px] font-bold tracking-widest px-2 py-0.5 border border-tertiary/50 text-tertiary';
+        } else {
+            mentorBadge.textContent = 'MENTEE';
+            mentorBadge.className = 'font-mono text-[9px] font-bold tracking-widest px-2 py-0.5 border border-secondary/50 text-secondary';
+        }
+    }
+
     set('portfolio-clearance-line', `ROLE: ${user.role || 'MEMBER'}`);
+
+    // Social links
+    const socialEl = get('portfolio-social-links');
+    if (socialEl) {
+        const links = [];
+        const _icon = (icon, label, url) => url ? `
+            <a href="${url}" target="_blank" rel="noopener"
+               class="flex items-center gap-1 font-mono text-[10px] text-on-surface-variant hover:text-primary transition-colors border border-outline-variant/20 px-2 py-1 hover:border-primary/40">
+               <span class="material-symbols-outlined text-[12px]">${icon}</span>${label}
+            </a>` : '';
+        links.push(_icon('code',        'GitHub',   _saved.github));
+        links.push(_icon('work',        'LinkedIn', _saved.linkedin));
+        links.push(_icon('language',    'Website',  _saved.website));
+        socialEl.innerHTML = links.join('') || '';
+        socialEl.classList.toggle('hidden', !links.some(l => l));
+    }
 }
 
 /* §2 — populate stat cards */
@@ -575,6 +684,39 @@ function _pfRenderTimeline(experiences) {
     container.innerHTML = `<div class="pf-timeline-line"></div>${nodes}`;
 }
 
+/* §6 — Education records */
+async function _pfRenderEducation(userId, token) {
+    const section   = document.getElementById('pf-education-section');
+    const container = document.getElementById('pf-education-container');
+    if (!section || !container) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/team/members/${userId}/education`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const list = await res.json();
+        if (!list.length) return;
+
+        container.innerHTML = list.map((e, i) => `
+            <div class="glass-panel p-5 relative overflow-hidden">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div class="space-y-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            ${e.institutionLogo ? `<img src="${e.institutionLogo}" class="w-5 h-5 object-contain grayscale" onerror="this.remove()"/>` : ''}
+                            <h3 class="font-headline text-sm font-bold text-white">${e.institution || 'Unknown Institution'}</h3>
+                        </div>
+                        <p class="font-mono text-[10px] text-primary uppercase tracking-widest">${e.title || ''}${e.specialization ? ' · ' + e.specialization : ''}</p>
+                        <p class="font-mono text-[9px] text-on-surface-variant">${e.startYear || '?'} — ${e.endYear || 'Present'}${e.studyMode ? ' · ' + e.studyMode : ''}${e.gpa && e.gpa > 0 ? ' · GPA ' + e.gpa : ''}</p>
+                        ${e.thesisTitle ? `<p class="font-mono text-[9px] text-on-surface-variant mt-1 italic">"${e.thesisTitle}"${e.thesisUrl ? ` <a href="${e.thesisUrl}" target="_blank" class="text-primary hover:underline">[link]</a>` : ''}</p>` : ''}
+                    </div>
+                    ${e.institutionWebsite ? `<a href="${e.institutionWebsite}" target="_blank" rel="noopener" class="shrink-0 text-[9px] font-mono text-on-surface-variant border border-outline-variant/30 px-3 py-1.5 hover:border-primary hover:text-primary transition-all uppercase tracking-widest">Visit</a>` : ''}
+                </div>
+            </div>`).join('');
+
+        section.classList.remove('hidden');
+    } catch { /* education not available, keep section hidden */ }
+}
+
 /* §5 — Project contribution analytics (UC005) */
 async function _pfRenderContributions(user) {
     const container = document.getElementById('pf-contributions-container');
@@ -659,37 +801,22 @@ window.onload = function() {
     showToast('CV export opened — print or save as PDF', 'success');
 }
 
-async function deleteSelfAccount() {
+function deleteSelfAccount() {
     const savedUserStr = sessionStorage.getItem('cyber_user') || localStorage.getItem('cyber_user');
-    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
-    if (!savedUserStr || !token) return showToast('Session expired.', 'error');
+    if (!savedUserStr) return showToast('Session expired.', 'error');
 
     const currentUser = JSON.parse(savedUserStr);
     const input = document.getElementById('delete-confirm-input');
     const typed = input ? input.value.trim() : '';
 
-    if (typed !== currentUser.username) {
-        showToast('Username does not match. Deletion cancelled.', 'error');
+    if (!typed || typed !== currentUser.username) {
+        showToast('Username does not match. Request cancelled.', 'error');
         return;
     }
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/team/members/${currentUser.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-            closeModal('delete-account-modal');
-            showToast('Account deleted. Logging out...', 'success');
-            setTimeout(() => logout(), 1500);
-        } else {
-            const err = await response.json().catch(() => ({}));
-            showToast(`Error: ${err.message || 'Could not delete account.'}`, 'error');
-        }
-    } catch {
-        showToast('Server error. Please try again.', 'error');
-    }
+    closeModal('delete-account-modal');
+    if (input) input.value = '';
+    showToast('Request submitted. An admin will review your deletion request.', 'success');
 }
 
 async function adminDeleteUser(userId) {
@@ -718,6 +845,75 @@ async function adminDeleteUser(userId) {
     } catch (error) {
         showToast("SERVER ERROR: Cannot connect to the server.", "error");
     }
+}
+
+// ── MY MENTOR REQUESTS (mentee notifications) ──────────────────────────────
+async function loadMyMentorRequests() {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    const section = document.getElementById('my-requests-section');
+    const list = document.getElementById('my-requests-list');
+    if (!section || !list || !token) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/my-requests`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const requests = await res.json();
+        if (!requests.length) return;
+
+        section.classList.remove('hidden');
+
+        const seenKey = 'seen_request_ids';
+        const seen = new Set(JSON.parse(localStorage.getItem(seenKey) || '[]'));
+        const hasNew = requests.some(r => (r.status === 'ACCEPTED' || r.status === 'REJECTED') && !seen.has(r.id));
+        const badge = document.getElementById('requests-new-badge');
+        if (badge) badge.classList.toggle('hidden', !hasNew);
+
+        const statusStyle = {
+            PENDING:   'text-yellow-400 border-yellow-400/30 bg-yellow-400/5',
+            ACCEPTED:  'text-primary border-primary/30 bg-primary/5',
+            REJECTED:  'text-red-400 border-red-500/30 bg-red-500/5',
+            CANCELLED: 'text-gray-500 border-white/10 bg-white/5',
+        };
+        const statusIcon = { PENDING: '⏳', ACCEPTED: '✓', REJECTED: '✗', CANCELLED: '—' };
+
+        list.innerHTML = requests.map(r => {
+            const style = statusStyle[r.status] || statusStyle.PENDING;
+            const icon  = statusIcon[r.status]  || '⏳';
+            const isNew = (r.status === 'ACCEPTED' || r.status === 'REJECTED') && !seen.has(r.id);
+            return `
+            <div class="bg-[#0a0a0a] border ${isNew ? 'border-primary/30' : 'border-white/5'} p-5 flex items-center justify-between gap-4 flex-wrap transition-all">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 border ${style}">${icon} ${r.status}</span>
+                        ${isNew ? '<span class="font-mono text-[9px] font-bold text-primary animate-pulse">● NEW</span>' : ''}
+                    </div>
+                    <p class="text-white font-bold font-headline">${r.mentorName || 'Mentor'}</p>
+                    <p class="font-mono text-[10px] text-gray-500 mt-0.5">${new Date(r.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${r.status === 'PENDING' ? `<button onclick="cancelMentorRequest(${r.id})" class="px-4 py-2 bg-red-600/10 border border-red-500/30 text-red-400 font-mono text-[9px] uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">CANCEL</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+        // Mark ACCEPTED/REJECTED as seen
+        requests.forEach(r => { if (r.status === 'ACCEPTED' || r.status === 'REJECTED') seen.add(r.id); });
+        localStorage.setItem(seenKey, JSON.stringify([...seen]));
+
+    } catch {}
+}
+
+async function cancelMentorRequest(reqId) {
+    const token = sessionStorage.getItem('cyber_token') || localStorage.getItem('cyber_token');
+    try {
+        const res = await fetch(`${API_BASE_URL}/mentor/requests/${reqId}/cancel`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) { showToast('Request cancelled.', 'success'); loadMyMentorRequests(); }
+        else showToast('Failed to cancel.', 'error');
+    } catch { showToast('Error cancelling request.', 'error'); }
 }
 
 function toggleMessageForm(userId) {

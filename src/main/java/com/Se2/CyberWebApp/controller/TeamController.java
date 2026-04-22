@@ -14,10 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/team")
@@ -41,6 +43,15 @@ public class TeamController {
             map.put("name", user.getName());
             map.put("avatar", user.getAvatar());
             map.put("role", (user.getRoleEntity() != null) ? user.getRoleEntity().getName() : "MEMBER");
+            boolean roleMentor = user.getRoleEntity() != null &&
+                user.getRoleEntity().getName().toLowerCase().contains("mentor");
+            map.put("isMentor", teamRepository.findByUserId(user.getId()).isPresent() || roleMentor);
+
+            List<UserExperience> exps = experienceRepository.findByUserIdOrderByStartDateDesc(user.getId());
+            List<Map<String, String>> expTags = exps.stream()
+                .map(e -> Map.of("tags", e.getTags() != null ? e.getTags() : ""))
+                .collect(Collectors.toList());
+            map.put("experiences", expTags);
 
             teamList.add(map);
         }
@@ -68,12 +79,27 @@ public class TeamController {
         response.put("address", user.getAddress() != null ? user.getAddress() : "UNKNOWN LOCATION");
         response.put("email", user.getEmail() != null ? user.getEmail() : "ENCRYPTED");
         response.put("coin", user.getCoin() != null ? user.getCoin() : 0);
-        response.put("isMentor", teamRepository.findByUserId(id).isPresent());
+        boolean roleMentor = user.getRoleEntity() != null &&
+            user.getRoleEntity().getName().toLowerCase().contains("mentor");
+        boolean isMentor = teamRepository.findByUserId(id).isPresent() || roleMentor;
+        response.put("isMentor", isMentor);
+
+        if (isMentor) {
+            teamRepository.findByUserId(id).ifPresent(team -> {
+                response.put("mentorTitle",    team.getTitle() != null    ? team.getTitle()    : "");
+                response.put("mentorPosition", team.getPosition() != null ? team.getPosition() : "");
+                response.put("mentorBio",      team.getBio() != null      ? team.getBio()      : "");
+                response.put("mentorSocial",   team.getSocial() != null   ? team.getSocial()   : "");
+                response.put("mentorRate",     team.getRatePerHour() != null ? team.getRatePerHour() : 0);
+                response.put("mentorCurrency", team.getCurrencyUnit() != null ? team.getCurrencyUnit() : "COIN");
+            });
+        }
 
         return ResponseEntity.ok(response);
     }
 
     // --- API 3: Update info and coin ---
+    @Transactional
     @PutMapping("/members/{id}")
     public ResponseEntity<?> updateMemberProfile(@PathVariable Integer id, @RequestBody Map<String, Object> updateData) {
         User user = userRepository.findById(id).orElse(null);
@@ -103,7 +129,23 @@ public class TeamController {
             }
         }
 
-        userRepository.save(user);
+        if (updateData.containsKey("username")) {
+            String newUsername = updateData.get("username").toString().trim();
+            if (!newUsername.isEmpty() && !newUsername.equals(user.getUsername())) {
+                if (userRepository.findByUsername(newUsername).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Username already taken."));
+                }
+                user.setUsername(newUsername);
+            }
+        }
+
+        try {
+            userRepository.save(user);
+        } catch (Exception e) {
+            String cause = (e.getCause() != null) ? e.getCause().getMessage() : e.getMessage();
+            System.out.println("[SYSTEM] Profile save error: " + cause);
+            return ResponseEntity.badRequest().body(Map.of("message", "Save failed: " + cause));
+        }
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Tactical Data & Economy updated successfully.");
